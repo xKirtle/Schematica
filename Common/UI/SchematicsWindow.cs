@@ -21,6 +21,7 @@ namespace Schematica.Common.UI;
 
 public class SchematicsWindow : DraggableUIPanel
 {
+    private UIAccordion accordion;
     public override void OnInitialize() {
         Width.Set(300f, 0f);
         Height.Set(500f, 0f);
@@ -38,7 +39,7 @@ public class SchematicsWindow : DraggableUIPanel
         AddSearchBar(this);
         
         //Accordion
-        UIAccordion accordion = new UIAccordion(itemHeight: 40) {
+        accordion = new UIAccordion(itemHeight: 40) {
             Width = StyleDimension.Fill,
             Height = new StyleDimension(-30f, 1f),
             Top = new StyleDimension(30f, 0f)
@@ -48,8 +49,8 @@ public class SchematicsWindow : DraggableUIPanel
 
         //Test, remove later
         List<UIAccordionItem> testList = new List<UIAccordionItem>();
-        for (int i = 0; i < 5; i++) {
-            testList.Add(new UIAccordionItem($"Item {i + 1}", accordion.ItemHeight, Main.rand.Next(100, 250)));
+        for (int i = 0; i < 105; i++) {
+            testList.Add(new UIAccordionItem($"Item {i + 1 + Main.rand.Next(0, 20)}", headerHeight: accordion.ItemHeight, bodyHeight: 250));
         }
 
         accordion.UpdateItems(testList);
@@ -58,24 +59,28 @@ public class SchematicsWindow : DraggableUIPanel
     private UIPanel searchAreaPanel;
     private UISearchBar searchBar;
     private void AddSearchBar(UIElement parent) {
-        searchAreaPanel = new UIPanel();
-        searchAreaPanel.Width.Set(0f, 1f);
-        searchAreaPanel.Height.Set(25f, 0f);
-        searchAreaPanel.BackgroundColor = new Color(35, 40, 83);
-        searchAreaPanel.BorderColor = new Color(35, 40, 83);
+        searchAreaPanel = new UIPanel() {
+            Width = StyleDimension.Fill,
+            Height = new StyleDimension(25f, 0f),
+            BackgroundColor = new Color(35, 40, 83),
+            BorderColor = new Color(35, 40, 83)
+        };
         searchAreaPanel.SetPadding(0f);
 
-        searchBar = new UISearchBar(LocalizedText.Empty, 1f);
-        searchBar.Width.Set(0f, 1f);
-        searchBar.Height.Set(24f, 0f);
-        
+        searchBar = new UISearchBar(LocalizedText.Empty, 1f) {
+            Width = StyleDimension.Fill,
+            Height = new StyleDimension(24f, 0)
+        };
+
         searchAreaPanel.Append(searchBar);
 
-        UIImageButton searchCancelCross = new UIImageButton(Main.Assets.Request<Texture2D>("Images/UI/SearchCancel"));
-        searchCancelCross.HAlign = 1f;
-        searchCancelCross.VAlign = 0.5f;
-        searchCancelCross.Left.Set(-2f, 0f);
-        
+        Asset<Texture2D> texture = Main.Assets.Request<Texture2D>("Images/UI/SearchCancel");
+        UIImageButton searchCancelCross = new UIImageButton(texture) {
+            HAlign = 1f,
+            VAlign = 0.5f,
+            Left = new StyleDimension(-2f, 0f)
+        };
+
         searchAreaPanel.Append(searchCancelCross);
         
         parent.Append(searchAreaPanel);
@@ -91,6 +96,13 @@ public class SchematicsWindow : DraggableUIPanel
             Schematica.CanSelectEdges = false;
             Main.LocalPlayer.mouseInterface = true;
         }
+        
+        //Smooth Scroll
+        // accordion.Items.OnScrollWheel += (evt, element) => {
+        //     Console.WriteLine(evt.ScrollWheelValue);
+        // };
+
+        // Console.WriteLine(accordion.scrollbar.ViewPosition);
     }
     
     //MakeThumbnail -> What makes paint tools thumbnails

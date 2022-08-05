@@ -15,22 +15,20 @@ namespace Schematica.Common.UI.UIElements;
 public class UIAccordion : UIElement
 {
     private List<UIAccordionItem> accordianItems;
-    public UIGrid Items;
-    private UIScrollbar scrollbar;
+    public SmoothUIGrid Items;
+    public UIScrollbar scrollbar;
     
     public UIAccordionItem SelectedItem { get; private set; }
     public int ItemHeight { get; private set; }
-    
-    //Accordion will handle the unopened items height
-    //Each item can then specify how much space its body will take when selected
 
     public UIAccordion(int itemHeight) {
         ItemHeight = itemHeight;
         accordianItems = new List<UIAccordionItem>();
-        
-        Items = new UIGrid() {
-            Width = new StyleDimension(-20f - 5f, 1f),
+
+        Items = new SmoothUIGrid() {
+            Width = new StyleDimension(-20f - 3f, 1f),
             Height = StyleDimension.Fill,
+            ListPadding = 5f
         };
 
         scrollbar = new UIScrollbar() {
@@ -39,31 +37,31 @@ public class UIAccordion : UIElement
             Left = new StyleDimension(-20f, 1f),
             Top = new StyleDimension(5f, 0f)
         };
-
+        
         Items.SetScrollbar(scrollbar);
 
         Append(Items);
         Append(scrollbar);
     }
 
+
     public void UpdateItems(List<UIAccordionItem> list) {
         accordianItems.Clear();
         Items.Clear();
 
         accordianItems.AddRange(list);
-        accordianItems.Sort(new NaturalComparer());
-
-        accordianItems.ForEach(item => Items.Add(item));
+        Items.AddRange(list);
+        // accordianItems.ForEach(item => Items.Add(item));
+        Items.UpdateOrder();
         
         //Bind events
-
         foreach (UIAccordionItem accordianItem in accordianItems) {
             accordianItem.HeaderClick += () => {
-                //Change arrow
-                //Smoothly increase height
+                if (SelectedItem != accordianItem)
+                    SelectedItem?.ToggleOpen();
                 
                 accordianItem.ToggleOpen();
-                // Recalculate();
+                SelectedItem = accordianItem.IsOpen ? accordianItem : null;
             };
         }
         

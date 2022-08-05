@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
+using Schematica.Common.DataStructures;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
@@ -26,6 +27,7 @@ public class UIAccordionItem : UIElement
 
     private UIImageFramed arrow;
     private Asset<Texture2D> arrowAsset;
+    private float targetHeight;
 
     public UIAccordionItem(string title, int headerHeight, int bodyHeight) {
         Title = title;
@@ -36,32 +38,12 @@ public class UIAccordionItem : UIElement
         Width.Set(0f, 1f);
         Height.Set(Header.Height.Pixels + (IsOpen ? Body.Height.Pixels : 0), 0f);
         
+        Append(Body);
         Append(Header);
+
+        OverflowHidden = true;
     }
 
-    private void GenerateBody(int bodyHeight) {
-        Body = new UIElement() {
-            Width = StyleDimension.Fill,
-            Height = new StyleDimension(Header.Height.Pixels + bodyHeight, 0f),
-        };
-        
-        UIPanel panel = new UIPanel() {
-            Width = StyleDimension.Fill,
-            Height = StyleDimension.Fill,
-            PaddingTop = Header.Height.Pixels + 10f
-        };
-
-        UIText text = new UIText("Some Text") {
-            VAlign =  0f,
-            MaxWidth = new StyleDimension(-5f * 2, 1f), //5 pixel gap for the arrow button and 5 pixel gap from back button
-            Left = new StyleDimension(5f, 0f)
-        };
-        
-        panel.Append(text);
-        
-        Body.Append(panel);
-    }
-    
     private void GenerateHeader(int headerHeight) {
         Header = new UIElement() {
             Width = StyleDimension.Fill,
@@ -106,29 +88,81 @@ public class UIAccordionItem : UIElement
         Header.OnMouseOut += (__, _) => {
             panel.BackgroundColor = new Color(35, 40, 83);
         };
-        
+
+        targetHeight = Header.Height.Pixels;
         Header.Append(panel);
+    }
+    
+    private void GenerateBody(int bodyHeight) {
+        Body = new UIElement() {
+            Width = StyleDimension.Fill,
+            Height = new StyleDimension(Header.Height.Pixels + bodyHeight, 0f),
+        };
+        
+        UIPanel panel = new UIPanel() {
+            Width = StyleDimension.Fill,
+            Height = StyleDimension.Fill,
+            PaddingTop = Header.Height.Pixels + 10f,
+            BorderColor = new Color(35, 40, 83)
+        };
+
+        UIText text = new UIText("Some Text") {
+            VAlign =  0f,
+            MaxWidth = new StyleDimension(-5f * 2, 1f),
+            Left = new StyleDimension(5f, 0f)
+        };
+        
+        panel.Append(text);
+        
+        Body.Append(panel);
     }
 
     public void ToggleOpen() {
         IsOpen = !IsOpen;
 
-        if (IsOpen) {
-            Header.Remove();
-            Append(Body);
-            Append(Header);
-        }
-        else
-            Body.Remove();
-        
-        Height.Set(Header.Height.Pixels + (IsOpen ? Body.Height.Pixels - Header.Height.Pixels : 0), 0f);
+        targetHeight = Header.Height.Pixels + (IsOpen ? Body.Height.Pixels - Header.Height.Pixels : 0) + 1f;
         arrow.SetImage(arrowAsset, arrowAsset.Frame(2, 2, (!IsOpen).ToInt(), 0));
         RecalculateChildren();
     }
 
     public override void Update(GameTime gameTime) {
         base.Update(gameTime);
+
+        Height.Set(MathHelper.Lerp(Height.Pixels, targetHeight, 0.2f), 0f);
+    }
+
+    public override int CompareTo(object obj) {
+        string x = this.Title;
+        string y = (obj as UIAccordionItem)?.Title;
         
-        
+        if (x == null && y == null)
+            return 0;
+        if (x == null)
+            return -1;
+        if (y == null)
+            return 1;
+
+        int lx = x.Length, ly = y.Length;
+
+        int mx = 0, my = 0;
+        for (; mx < lx && my < ly; mx++, my++) {
+            if (char.IsDigit(x[mx]) && char.IsDigit(y[my])) {
+                long vx = 0, vy = 0;
+
+                for (; mx < lx && char.IsDigit(x[mx]); mx++)
+                    vx = vx * 10 + x[mx] - '0';
+
+                for (; my < ly && char.IsDigit(y[my]); my++)
+                    vy = vy * 10 + y[my] - '0';
+
+                if (vx != vy)
+                    return vx > vy ? 1 : -1;
+            }
+
+            if (mx < lx && my < ly && x[mx] != y[my])
+                return x[mx] > y[my] ? 1 : -1;
+        }
+
+        return lx - mx - (ly - my);
     }
 }
