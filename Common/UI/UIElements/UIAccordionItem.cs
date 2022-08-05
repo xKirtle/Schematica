@@ -20,11 +20,11 @@ public class UIAccordionItem : UIElement
     public UIElement Header { get; private set; }
     
     public UIElement Body { get; private set; }
-    
-    public Action HeaderClick;
-    
-    public bool IsOpen { get; private set; }
 
+    public bool IsOpen { get; private set; }
+    
+    private UIElement innerBody;
+    public Action HeaderClick;
     private UIImageFramed arrow;
     private Asset<Texture2D> arrowAsset;
     private float targetHeight;
@@ -36,9 +36,9 @@ public class UIAccordionItem : UIElement
         GenerateBody(bodyHeight);
 
         Width.Set(0f, 1f);
-        Height.Set(Header.Height.Pixels + (IsOpen ? Body.Height.Pixels : 0), 0f);
+        Height.Set(Header.Height.Pixels + (IsOpen ? innerBody.Height.Pixels : 0), 0f);
         
-        Append(Body);
+        Append(innerBody);
         Append(Header);
 
         OverflowHidden = true;
@@ -94,33 +94,26 @@ public class UIAccordionItem : UIElement
     }
     
     private void GenerateBody(int bodyHeight) {
-        Body = new UIElement() {
+        innerBody = new UIElement() {
             Width = StyleDimension.Fill,
             Height = new StyleDimension(Header.Height.Pixels + bodyHeight, 0f),
         };
         
-        UIPanel panel = new UIPanel() {
+        Body = new UIPanel() {
             Width = StyleDimension.Fill,
             Height = StyleDimension.Fill,
             PaddingTop = Header.Height.Pixels + 10f,
-            BorderColor = new Color(35, 40, 83)
+            BorderColor = new Color(35, 40, 83),
+            OverflowHidden = true
         };
 
-        UIText text = new UIText("Some Text") {
-            VAlign =  0f,
-            MaxWidth = new StyleDimension(-5f * 2, 1f),
-            Left = new StyleDimension(5f, 0f)
-        };
-        
-        panel.Append(text);
-        
-        Body.Append(panel);
+        innerBody.Append(Body);
     }
 
     public void ToggleOpen() {
         IsOpen = !IsOpen;
 
-        targetHeight = Header.Height.Pixels + (IsOpen ? Body.Height.Pixels - Header.Height.Pixels : 0) + 1f;
+        targetHeight = Header.Height.Pixels + (IsOpen ? innerBody.Height.Pixels - Header.Height.Pixels : 0) + 1f;
         arrow.SetImage(arrowAsset, arrowAsset.Frame(2, 2, (!IsOpen).ToInt(), 0));
         RecalculateChildren();
     }

@@ -46,14 +46,8 @@ public class SchematicsWindow : DraggableUIPanel
         };
         
         Append(accordion);
-
-        //Test, remove later
-        List<UIAccordionItem> testList = new List<UIAccordionItem>();
-        for (int i = 0; i < 105; i++) {
-            testList.Add(new UIAccordionItem($"Item {i + 1 + Main.rand.Next(0, 20)}", headerHeight: accordion.ItemHeight, bodyHeight: 250));
-        }
-
-        accordion.UpdateItems(testList);
+        
+        TestingRepopulateWindow();
     }
 
     private UIPanel searchAreaPanel;
@@ -85,8 +79,6 @@ public class SchematicsWindow : DraggableUIPanel
         
         parent.Append(searchAreaPanel);
     }
-    
-    //Only have one loaded schematic at a time (the one currently selected by the accordion)
 
     public override void Update(GameTime gameTime) {
         base.Update(gameTime);
@@ -96,13 +88,26 @@ public class SchematicsWindow : DraggableUIPanel
             Schematica.CanSelectEdges = false;
             Main.LocalPlayer.mouseInterface = true;
         }
-        
-        //Smooth Scroll
-        // accordion.Items.OnScrollWheel += (evt, element) => {
-        //     Console.WriteLine(evt.ScrollWheelValue);
-        // };
+    }
 
-        // Console.WriteLine(accordion.scrollbar.ViewPosition);
+    public void TestingRepopulateWindow() {
+        //Test, remove later
+        List<UIAccordionItem> testList = new List<UIAccordionItem>();
+        for (int i = 0; i < 10; i++) {
+            UIAccordionItem tempItem = new UIAccordionItem($"Item {i + 1}", headerHeight: accordion.ItemHeight, bodyHeight: 264);
+            
+            UIPanel thumbnailPanel = new UIPanel() {
+                Width = StyleDimension.Fill,
+                Height = new StyleDimension(240f, 0f), //Can't make square by getting width's pixel value?
+                BackgroundColor = new Color(150, 40, 83)
+            };
+        
+            tempItem.Body.Append(thumbnailPanel);
+            
+            testList.Add(tempItem);
+        }
+
+        accordion.UpdateItems(testList);
     }
     
     //MakeThumbnail -> What makes paint tools thumbnails

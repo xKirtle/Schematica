@@ -12,6 +12,7 @@ using Terraria.UI;
 
 namespace Schematica.Common.UI.UIElements;
 
+//WARNING: The UIGrid has no limit of items.. could affect performance if thousands of entries?
 public class UIAccordion : UIElement
 {
     private List<UIAccordionItem> accordianItems;
@@ -46,8 +47,7 @@ public class UIAccordion : UIElement
 
 
     public void UpdateItems(List<UIAccordionItem> list) {
-        accordianItems.Clear();
-        Items.Clear();
+        Clear();
 
         accordianItems.AddRange(list);
         Items.AddRange(list);
@@ -64,6 +64,10 @@ public class UIAccordion : UIElement
                 SelectedItem = accordianItem.IsOpen ? accordianItem : null;
             };
         }
-        
+    }
+
+    public void Clear() {
+        accordianItems.Clear();
+        Items.Clear();
     }
 }
