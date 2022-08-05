@@ -8,9 +8,11 @@ using MonoMod.Cil;
 using ReLogic.Content;
 using Schematica.Common;
 using Schematica.Common.DataStructures;
+using Schematica.Common.UI;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
+using Terraria.GameInput;
 using Terraria.Graphics.Capture;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -20,7 +22,10 @@ namespace Schematica;
 public class Schematica : Mod
 {
     internal static bool CanSelectEdges;
+    internal static ModKeybind UITestBind;
     public override void Load() {
+        UITestBind = KeybindLoader.RegisterKeybind(this, "Empty", "X");
+        
         bool[] selected = new bool[3];
         string[] textureNames = new[] { "FloppyDisk", "Magnifier", "Schematica" };
         //Import, Export, Toggle on/off
@@ -161,5 +166,14 @@ public class Schematica : Mod
         //     // //Emit brfalse to check if delegate is false, and if it is, skip to label which is the next instruction after return
         //     // c.Emit(OpCodes.Brfalse_S, modesUpdateLoopLabel);
         // };
+    }
+}
+
+public class KeyBindPlayer : ModPlayer
+{
+    public override void ProcessTriggers(TriggersSet triggersSet) {
+        if (Schematica.UITestBind.JustPressed) {
+            SchematicaUIState.Instance.SchematicaWindowElement.TestingRepopulateWindow();
+        }
     }
 }
