@@ -44,14 +44,12 @@ public class UIAccordion : UIElement
         Append(Items);
         Append(scrollbar);
     }
-
-
+    
     public void UpdateItems(List<UIAccordionItem> list) {
         Clear();
 
         accordianItems.AddRange(list);
         Items.AddRange(list);
-        // accordianItems.ForEach(item => Items.Add(item));
         Items.UpdateOrder();
         
         //Bind events

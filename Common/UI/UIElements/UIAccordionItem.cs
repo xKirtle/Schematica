@@ -26,6 +26,7 @@ public class UIAccordionItem : UIElement
     private UIElement innerBody;
     public Action HeaderClick;
     private UIImageFramed arrow;
+    private ScrollingUIText title;
     private Asset<Texture2D> arrowAsset;
     private float targetHeight;
 
@@ -54,20 +55,30 @@ public class UIAccordionItem : UIElement
             Width = StyleDimension.Fill,
             Height = StyleDimension.Fill,
             BackgroundColor = new Color(35, 40, 83),
-            BorderColor = new Color(35, 40, 83)
+            BorderColor = new Color(35, 40, 83),
         };
         panel.SetPadding(0);
 
-        UIText title = new UIText(Title) {
-            VAlign = 0.5f,
-            Left = new StyleDimension(15f, 0f),
-            MaxWidth = new StyleDimension(-5f * 2 - 32f, 1f) //5 pixel gap for the arrow button and 5 pixel gap from back button
+        UIElement uiTextDrawBounds = new UIElement() {
+            Width = new StyleDimension(-5f * 2 - 32f - 0f, 1f),
+            Height = StyleDimension.Fill,
+            OverflowHidden = true
         };
         
-        panel.Append(title);
+        panel.Append(uiTextDrawBounds);
         
+        title = new ScrollingUIText(Title) {
+            VAlign = 0.5f,
+            HAlign = 0f,
+            Left = new StyleDimension(10f, 0f),
+        };
+
+        uiTextDrawBounds.Append(title);
+
         arrowAsset = Main.Assets.Request<Texture2D>("Images/UI/TexturePackButtons", AssetRequestMode.ImmediateLoad);
         arrow = new UIImageFramed(arrowAsset, arrowAsset.Frame(2, 2, (!IsOpen).ToInt(), 0)) {
+            Width = new StyleDimension(32f, 0f),
+            Height = new StyleDimension(32f, 0f),
             Left = new StyleDimension(-5f - 32f, 1f),
             Top = new StyleDimension((headerHeight - 32f) / 2f, 0f), //VAlign 0.5f was not working?
             IgnoresMouseInteraction = true
