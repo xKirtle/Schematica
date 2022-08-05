@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
 using Schematica.Common.DataStructures;
 using Schematica.Common.UI.UIElements;
+using Schematica.Core;
 using Terraria;
 using Terraria.Audio;
 using Terraria.DataStructures;
@@ -19,7 +21,7 @@ using Terraria.UI;
 
 namespace Schematica.Common.UI;
 
-public class SchematicsWindow : DraggableUIPanel
+public class SchematicaWindow : DraggableUIPanel
 {
     private UIAccordion accordion;
     public override void OnInitialize() {
@@ -29,12 +31,12 @@ public class SchematicsWindow : DraggableUIPanel
         Top.Set(120f, 0f);
         SetPadding(6f);
 
-        OnMouseDown += (element, _) => {
-            // Vector2 MenuPosition = new Vector2(Left.Pixels, Top.Pixels);
-            // Vector2 clickPos = Vector2.Subtract(element.MousePosition, MenuPosition);
-            // canDrag = clickPos.Y <= 25;
-            canDrag = false;
-        };
+        canDrag = false;
+        // OnMouseDown += (element, _) => {
+        //     Vector2 MenuPosition = new Vector2(Left.Pixels, Top.Pixels);
+        //     Vector2 clickPos = Vector2.Subtract(element.MousePosition, MenuPosition);
+        //     canDrag = clickPos.Y <= 25;
+        // };
 
         AddSearchBar(this);
         
@@ -53,6 +55,7 @@ public class SchematicsWindow : DraggableUIPanel
     private UIPanel searchAreaPanel;
     private UISearchBar searchBar;
     private void AddSearchBar(UIElement parent) {
+        //WIP
         searchAreaPanel = new UIPanel() {
             Width = StyleDimension.Fill,
             Height = new StyleDimension(25f, 0f),
@@ -91,10 +94,13 @@ public class SchematicsWindow : DraggableUIPanel
     }
 
     public void TestingRepopulateWindow() {
+
+        List<string> fileNames = Utilities.FileNamesInDirectory($@"{Path.Combine(Main.SavePath)}\Schematica");
+        
         //Test, remove later
-        List<UIAccordionItem> testList = new List<UIAccordionItem>();
-        for (int i = 0; i < 10; i++) {
-            UIAccordionItem tempItem = new UIAccordionItem($"Item {i + 1}", headerHeight: accordion.ItemHeight, bodyHeight: 264);
+        List<UIAccordionItem> testList = new List<UIAccordionItem>(fileNames.Count);
+        for (int i = 0; i < fileNames.Count; i++) {
+            UIAccordionItem tempItem = new UIAccordionItem(fileNames[i], headerHeight: accordion.ItemHeight, bodyHeight: 264);
             
             UIPanel thumbnailPanel = new UIPanel() {
                 Width = StyleDimension.Fill,

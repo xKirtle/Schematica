@@ -12,7 +12,7 @@ using Terraria.UI;
 
 namespace Schematica.Common.UI;
 
-public class SelectionUISystem : UISystem<SelectionUIState>
+public class SchematicaUISystem : UISystem<SchematicaUIState>
 {
     public override InterfaceScaleType InterfaceScaleType => InterfaceScaleType.UI;
 
@@ -29,11 +29,15 @@ public class SelectionUISystem : UISystem<SelectionUIState>
     }
 }
 
-public class SelectionUIState : UIState
+public class SchematicaUIState : UIState
 {
+    public static SchematicaUIState Instance;
+    public SchematicaWindow SchematicaWindowElement;
     public override void OnInitialize() {
-        SchematicsWindow window = new SchematicsWindow();
-        Append(window);
+        Instance = this;
+        
+        SchematicaWindowElement = new SchematicaWindow();
+        Append(SchematicaWindowElement);
     }
 
     public override void Update(GameTime gameTime) => base.Update(gameTime);

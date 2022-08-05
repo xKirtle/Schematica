@@ -8,7 +8,7 @@ namespace Schematica.Common;
 
 public class SchematicaPreview
 {
-    public static void DrawPreview(SchematicData data, Vector2 position, float scale = 1f) {
+    public static void DrawPreview(SchematicaData data, Vector2 position, float scale = 1f) {
         // GraphicsDevice gd = Main.graphics.GraphicsDevice;
         // SpriteBatch spriteBatch = Main.spriteBatch;
     }

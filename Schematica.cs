@@ -28,7 +28,6 @@ public class Schematica : Mod
         
         bool[] selected = new bool[3];
         string[] textureNames = new[] { "FloppyDisk", "Magnifier", "Schematica" };
-        //Import, Export, Toggle on/off
 
         //TODO: No need to detour this.. Make my own UI and check if cross needs to be shown if Edges aren't pinned
         //Make UIElement with custom layout and simply call Draw and Update on it from somewhere..
@@ -71,7 +70,7 @@ public class Schematica : Mod
                                 SoundEngine.PlaySound(SoundID.MenuTick);
 
                                 // ThreadPool.QueueUserWorkItem(state => SchematicData.SaveSchematic());
-                                SchematicData.SaveSchematic();
+                                SchematicaData.SaveSchematic();
                             }
                             break;
                         case 1:
@@ -81,7 +80,7 @@ public class Schematica : Mod
                                 SoundEngine.PlaySound(SoundID.MenuTick);
                                 
                                 // ThreadPool.QueueUserWorkItem(state => SchematicData.LoadSchematic("DefaultName"));
-                                SchematicData.LoadSchematic("DefaultName");
+                                SchematicaData.LoadSchematic("DefaultName");
                             }
                             break;
                         case 2:
@@ -132,6 +131,7 @@ public class Schematica : Mod
                 orig.Invoke(self);
         };
 
+        //One single IL Edit to prevent the 3 detours above?
         // IL.Terraria.Graphics.Capture.CaptureInterface.Update += il => {
         //     var c = new ILCursor(il);
         //     

@@ -14,8 +14,8 @@ using Terraria.ModLoader;
 
 namespace Schematica.Common.DataStructures;
 
-[JsonConverter(typeof(SchematicDataConverter))]
-public class SchematicData
+[JsonConverter(typeof(SchematicaDataConverter))]
+public class SchematicaData
 {
     public string Name { get; internal set; }
     public Point Size { get; internal set; }
@@ -28,38 +28,38 @@ public class SchematicData
     
     //Bring up UI popup to ask for a name before saving
     public static void SaveSchematic(string fileName = null) {
-        SchematicData schematic = new SchematicData();
+        SchematicaData schematica = new SchematicaData();
         try {
-            schematic.Name = fileName ?? GetNextDefaultSchematicName();
-            schematic.Size = new Point(Math.Abs(EdgeA.X - EdgeB.X) + 1, Math.Abs(EdgeA.Y - EdgeB.Y) + 1);
+            schematica.Name = fileName ?? GetNextDefaultSchematicName();
+            schematica.Size = new Point(Math.Abs(EdgeA.X - EdgeB.X) + 1, Math.Abs(EdgeA.Y - EdgeB.Y) + 1);
 
-            int numElements = schematic.Size.X * schematic.Size.Y;
+            int numElements = schematica.Size.X * schematica.Size.Y;
             Point minEdge = new Point(Math.Min(EdgeA.X, EdgeB.X), Math.Min(EdgeA.Y, EdgeB.Y));
-            schematic.data = new List<TileData>();
+            schematica.data = new List<TileData>();
             
-            for (int j = 0; j < schematic.Size.Y; j++)
-                for (int i = 0; i < schematic.Size.X; i++) {
+            for (int j = 0; j < schematica.Size.Y; j++)
+                for (int i = 0; i < schematica.Size.X; i++) {
                     Tile tile = Main.tile[minEdge.X + i, minEdge.Y + j];
-                    schematic.data.Add(new TileData(tile));
+                    schematica.data.Add(new TileData(tile));
                 }
 
             Directory.CreateDirectory(SavePath);
             
-            string path = $@"{SavePath}\{schematic.Name}.json";
-            string json = JsonConvert.SerializeObject(schematic);
-            string schematicPath = $@"{SavePath}\{schematic.Name}.schematica";
+            string path = $@"{SavePath}\{schematica.Name}.json";
+            string json = JsonConvert.SerializeObject(schematica);
+            string schematicPath = $@"{SavePath}\{schematica.Name}.schematica";
 
             if (File.Exists(schematicPath))
                 File.Delete(schematicPath);
 
             File.WriteAllText(path, json);
             using var zipArchive = ZipFile.Open(schematicPath, ZipArchiveMode.Create);
-            zipArchive.CreateEntryFromFile(path, schematic.Name + ".json");
+            zipArchive.CreateEntryFromFile(path, schematica.Name + ".json");
             zipArchive.Dispose();
 
             File.Delete(path);
             
-            schematic = null;
+            schematica = null;
             GC.Collect();
             GC.Collect();
         }
@@ -75,9 +75,9 @@ public class SchematicData
         using StreamReader sr = new StreamReader(stream);
         using JsonTextReader reader = new JsonTextReader(sr);
         JsonSerializer serializer = new JsonSerializer();
-        SchematicData schematic =  serializer.Deserialize<SchematicData>(reader);
+        SchematicaData schematica =  serializer.Deserialize<SchematicaData>(reader);
 
-        Console.WriteLine($"{schematic.Name} {schematic.Size}");
+        Console.WriteLine($"{schematica.Name} {schematica.Size}");
     }
 
     //Method to read used folder for saves and detect what's the next integer for naming it can use (for the default naming scheme)
