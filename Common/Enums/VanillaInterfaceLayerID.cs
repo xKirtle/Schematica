@@ -1,6 +1,6 @@
 ﻿namespace Schematica.Common.Enums;
 
-public enum VanillaInterfaceLayer
+public enum VanillaInterfaceLayerID
 {
     Interface_Logic_1,
     MP_Player_Names,
@@ -46,20 +46,20 @@ public enum VanillaInterfaceLayer
 
 public static class _
 {
-    public static string Stringify(this VanillaInterfaceLayer layer) {
+    public static string Stringify(this VanillaInterfaceLayerID layerId) {
         string layerName = "";
-        switch (layer) {
-            case VanillaInterfaceLayer.Map_And_Minimap:
+        switch (layerId) {
+            case VanillaInterfaceLayerID.Map_And_Minimap:
                 layerName = "Map / Minimap";
                 break;
-            case VanillaInterfaceLayer.NPC_And_Sign_Dialog:
+            case VanillaInterfaceLayerID.NPC_And_Sign_Dialog:
                 layerName = "NPC / Sign Dialog";
                 break;
-            case VanillaInterfaceLayer.Mouse_Item_And_NPC_Head:
+            case VanillaInterfaceLayerID.Mouse_Item_And_NPC_Head:
                 layerName = "Mouse Item / NPC Head";
                 break;
             default:
-                layerName = layer.ToString().Replace("_", "");
+                layerName = layerId.ToString().Replace("_", " ");
                 break;
         }
 
