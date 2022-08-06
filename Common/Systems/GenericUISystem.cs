@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Schematica.Common.Enums;
 using Terraria;
@@ -10,15 +11,19 @@ namespace Schematica.Common.Systems;
 [Autoload(Side = ModSide.Client)]
 public abstract class UISystem<T> : ModSystem where T : UIState, new()
 {
+    public static UISystem<T> Instance;
+
     public UserInterface userInterface;
     public T uiState;
-    public virtual string VanillaInterfaceLayer { get; protected set; } = Enums.VanillaInterfaceLayer.Ruler.Stringify();
+    public virtual VanillaInterfaceLayerID VanillaInterfaceLayer { get; protected set; } = Enums.VanillaInterfaceLayerID.Ruler;
     public virtual string InterfaceLayerName { get; protected set; } = typeof(T).Name;
     public virtual InterfaceScaleType InterfaceScaleType { get; protected set; } = InterfaceScaleType.None;
 
     protected GameTime lastUpdateUiGameTime;
 
     public override void Load() {
+        Instance = this;
+        
         userInterface = new UserInterface();
         uiState = new T();
         userInterface.SetState(uiState);
@@ -29,10 +34,10 @@ public abstract class UISystem<T> : ModSystem where T : UIState, new()
         if (userInterface?.CurrentState != null)
             userInterface.Update(gameTime);
     }
-    
+
     public override void ModifyInterfaceLayers(List<GameInterfaceLayer> layers) {
         //https://github.com/tModLoader/tModLoader/wiki/Vanilla-Interface-layers-values
-        int interfaceLayer = layers.FindIndex(layer => layer.Name.Equals(VanillaInterfaceLayer));
+        int interfaceLayer = layers.FindIndex(layer => layer.Name.Equals(VanillaInterfaceLayer.Stringify()));
         if (interfaceLayer != -1)
             layers.Insert(interfaceLayer, new LegacyGameInterfaceLayer($"Schematica: {InterfaceLayerName}", DrawMethod, InterfaceScaleType));
     }
