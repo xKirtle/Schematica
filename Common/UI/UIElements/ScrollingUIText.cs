@@ -21,10 +21,6 @@ public class ScrollingUIText : UIText
     
     public override void Update(GameTime gameTime) {
         base.Update(gameTime);
-    }
-
-    public override void Draw(SpriteBatch spriteBatch) {
-        base.Draw(spriteBatch);
         //Parent is the dummy UIElement we use to hide the text behind a certain width
 
         if (cooldownTimer > 0 && !scrollingLeft)
