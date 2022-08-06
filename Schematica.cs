@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -8,6 +9,7 @@ using MonoMod.Cil;
 using ReLogic.Content;
 using Schematica.Common;
 using Schematica.Common.DataStructures;
+using Schematica.Common.Systems;
 using Schematica.Common.UI;
 using Terraria;
 using Terraria.Audio;
@@ -23,14 +25,16 @@ public class Schematica : Mod
 {
     internal static bool CanSelectEdges;
     internal static ModKeybind UITestBind;
+    internal static List<SchematicaData> placedSchematics;
+    internal static SchematicaData currentPreview;
     public override void Load() {
         UITestBind = KeybindLoader.RegisterKeybind(this, "Empty", "X");
+        placedSchematics = new List<SchematicaData>();
         
         bool[] selected = new bool[3];
         string[] textureNames = new[] { "FloppyDisk", "Magnifier", "Schematica" };
 
         //TODO: No need to detour this.. Make my own UI and check if cross needs to be shown if Edges aren't pinned
-        //Make UIElement with custom layout and simply call Draw and Update on it from somewhere..
         
         On.Terraria.Graphics.Capture.CaptureInterface.DrawButtons += (orig, self, sb) => {
             for (int i = 0; i < selected.Length; i++) {
@@ -38,49 +42,58 @@ public class Schematica : Mod
                 float scale = 0.8f;
                 Vector2 position = new Vector2(24 + 46 * i, 24f + 46f);
                 Color color = Main.inventoryBack * 0.8f;
-
+        
                 sb.Draw(background, position, null, color, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
-
+        
                 Texture2D icon = ModContent.Request<Texture2D>($"Schematica/Assets/UI/{textureNames[i]}", AssetRequestMode.ImmediateLoad).Value;
                 sb.Draw(icon, position + new Vector2(26f) * scale, null, Color.White, 0f, icon.Size() / 2f, 1f, SpriteEffects.None, 0f);
-
+        
                 if (i == 0 && (!CaptureInterface.EdgeAPinned || !CaptureInterface.EdgeBPinned))
                     sb.Draw(TextureAssets.Cd.Value, position + new Vector2(26f) * scale, null, Color.White * 0.65f, 0f, TextureAssets.Cd.Value.Size() / 2f, 1f, SpriteEffects.None, 0f);
             }
-
+        
             orig.Invoke(self, sb);
         };
-
+        
         On.Terraria.Graphics.Capture.CaptureInterface.UpdateButtons += (orig, self, mouse) => {
             bool baseReturn = orig.Invoke(self, mouse);
             if (baseReturn)
                 return true;
-
+        
             for (int i = 0; i < selected.Length; i++) {
                 if (new Rectangle(24 + 46 * i, 24 + 46, 42, 42).Contains(mouse.ToPoint())) {
                     Main.LocalPlayer.mouseInterface = true;
-
+        
                     bool mouseClick = Main.mouseLeft && Main.mouseLeftRelease;
                     string hoverText = "";
                     switch (i) {
                         case 0:
                             hoverText = "Save Current Selection";
-
+        
                             if (mouseClick && CaptureInterface.EdgeAPinned && CaptureInterface.EdgeBPinned) {
                                 SoundEngine.PlaySound(SoundID.MenuTick);
-
+        
+                                // SchematicaWindowState.Instance.ToggleSaveNamePopup();
+                                
                                 // ThreadPool.QueueUserWorkItem(state => SchematicData.SaveSchematic());
-                                SchematicaData.SaveSchematic();
+                                // SchematicaData.SaveSchematic();
                             }
                             break;
                         case 1:
                             hoverText = "Load Schematics";
-
+        
                             if (mouseClick) {
                                 SoundEngine.PlaySound(SoundID.MenuTick);
+                                selected[i] = !selected[i];
+                                SchematicaWindowState.Instance.WindowElement.TestingRepopulateWindow();
+
+                                if (selected[i])
+                                    SchematicaUISystem.Instance.Activate();
+                                else
+                                    SchematicaUISystem.Instance.Deactivate();
                                 
                                 // ThreadPool.QueueUserWorkItem(state => SchematicData.LoadSchematic("DefaultName"));
-                                SchematicaData.LoadSchematic("DefaultName");
+                                // SchematicaData.LoadSchematic("DefaultName");
                             }
                             break;
                         case 2:
@@ -92,14 +105,13 @@ public class Schematica : Mod
                             }
                             break;
                     }
-
-                    //Not in a Draw method but should be fine..?
+        
                     Main.instance.MouseText(hoverText, 0, 0);
-
+        
                     return true;
                 }
             }
-
+        
             return false;
         };
 
@@ -173,7 +185,7 @@ public class KeyBindPlayer : ModPlayer
 {
     public override void ProcessTriggers(TriggersSet triggersSet) {
         if (Schematica.UITestBind.JustPressed) {
-            SchematicaUIState.Instance.SchematicaWindowElement.TestingRepopulateWindow();
+            SchematicaWindowState.Instance.WindowElement.TestingRepopulateWindow();
         }
     }
 }
