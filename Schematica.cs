@@ -1,7 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil.Cil;
@@ -11,6 +14,7 @@ using Schematica.Common;
 using Schematica.Common.DataStructures;
 using Schematica.Common.Systems;
 using Schematica.Common.UI;
+using Schematica.Core;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
@@ -23,16 +27,21 @@ namespace Schematica;
 
 public class Schematica : Mod
 {
-    internal static bool CanSelectEdges;
+    public static string SavePath = $@"{Path.Combine(Main.SavePath)}\{nameof(Schematica)}";
+    internal static int BufferSize = 4096; //.NET's default buffer is 4KB
+    internal static int CompressionLevel = 9; //[0, 9] Bigger level => smaller files. May take longer to load/save schematicas
+    
+    internal static bool CanSelectEdges = true;
     internal static ModKeybind UITestBind;
     internal static List<SchematicaData> placedSchematics;
     internal static SchematicaData currentPreview;
+
     public override void Load() {
         UITestBind = KeybindLoader.RegisterKeybind(this, "Empty", "X");
         placedSchematics = new List<SchematicaData>();
         
-        bool[] selected = new bool[3];
-        string[] textureNames = new[] { "FloppyDisk", "Magnifier", "Schematica" };
+        bool[] selected = new bool[2];
+        string[] textureNames = new[] { "FloppyDisk", "Schematica" };
 
         //TODO: No need to detour this.. Make my own UI and check if cross needs to be shown if Edges aren't pinned
         
@@ -77,6 +86,20 @@ public class Schematica : Mod
                                 
                                 // ThreadPool.QueueUserWorkItem(state => SchematicData.SaveSchematic());
                                 // SchematicaData.SaveSchematic();
+
+                                // var sw = Stopwatch.StartNew();
+                                // for (int j = 0; j < 10; j++) {
+                                //     SchematicaFileFormat.ExportSchematica("BinarySchematica" + j);
+                                // }
+                                //
+                                // Console.WriteLine(sw.ElapsedMilliseconds / 10f);
+                                
+                                Task.Factory.StartNew(() => SchematicaFileFormat.ExportSchematica("BinarySchematica"))
+                                    .ContinueWith(_ => {
+                                            Main.NewText("Finished Exporting");
+                                            Console.WriteLine("Finished Exporting");
+                                        }
+                                    );
                             }
                             break;
                         case 1:
@@ -91,9 +114,6 @@ public class Schematica : Mod
                                     SchematicaUISystem.Instance.Activate();
                                 else
                                     SchematicaUISystem.Instance.Deactivate();
-                                
-                                // ThreadPool.QueueUserWorkItem(state => SchematicData.LoadSchematic("DefaultName"));
-                                // SchematicaData.LoadSchematic("DefaultName");
                             }
                             break;
                         case 2:

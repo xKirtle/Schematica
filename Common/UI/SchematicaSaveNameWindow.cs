@@ -41,7 +41,7 @@ public class SchematicaSaveNameWindow : UIPanel
         };
     
         confirmButton.OnClick += (__, _) => {
-            ThreadPool.QueueUserWorkItem(state => SchematicaData.SaveSchematic(textBox.Text));
+            // ThreadPool.QueueUserWorkItem(state => SchematicaData.SaveSchematic(textBox.Text));
         };
         
         Append(confirmButton);

@@ -1,27 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Schematica.Core.JsonConverters;
 using Terraria;
 
 namespace Schematica.Common.DataStructures;
 
-[JsonConverter(typeof(TileDataConverter))]
 public class TileData
 {
-    public ushort TType;
-    public ushort WType;
-    public byte LAmount;
-    public byte LFlags;
-    public short TFrameX;
-    public short TFrameY;
-    public int TBitpack;
+    //Max bytes per TileData: 14 bytes
+    public ushort TType;    //2 bytes
+    public ushort WType;    //2 bytes
+    public byte LAmount;    //1 byte
+    public byte LFlags;     //1 byte
+    public short TFrameX;   //2 bytes
+    public short TFrameY;   //2 bytes
+    public int TBitpack;    //4 bytes
+    
     // public int TNonFrameBits => (int) (TBitpack & 0xFF001FFF);
 
     public TileData() { }
-    
-    public TileData(Tile tile) {
+
+    public TileData(int x, int y) => new TileData(Main.tile[x, y]);
+
+    public TileData(Tile tile) => GenerateInfo(tile);
+
+    public TileData GenerateInfo(Tile tile) {
         TType = tile.Get<TileTypeData>().Type;
         WType = tile.Get<WallTypeData>().Type;
         
@@ -57,5 +63,27 @@ public class TileData
         TBitpack = TileDataPacking.SetBit(data.BlueWire, TBitpack, 29);
         TBitpack = TileDataPacking.SetBit(data.GreenWire, TBitpack, 30);
         TBitpack = TileDataPacking.SetBit(data.YellowWire, TBitpack, 31);
+
+        return this;
+    }
+
+    public void Serialize(BinaryWriter writer) {
+        writer.Write(TType);
+        writer.Write(WType);
+        writer.Write(LAmount);
+        writer.Write(LFlags);
+        writer.Write(TFrameX);
+        writer.Write(TFrameY);
+        writer.Write(TBitpack);
+    }
+
+    public void Deserialize(BinaryReader reader) {
+        TType = reader.ReadUInt16();
+        WType = reader.ReadUInt16();
+        LAmount = reader.ReadByte();
+        LFlags = reader.ReadByte();
+        TFrameX = reader.ReadInt16();
+        TFrameY = reader.ReadInt16();
+        TBitpack = reader.ReadInt32();
     }
 }

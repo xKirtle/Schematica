@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using Microsoft.Xna.Framework;
@@ -156,15 +157,16 @@ public class SearchSchematicaWindow : DraggableUIPanel
             };
             
             tempItem.HeaderClick += () => {
-                Main.NewText(fileNames[index]);
                 // cancelTokenSource.Cancel();
                 // Task loadingSchematic = new Task(() => {
                 //     SchematicaData.LoadSchematic(fileNames[index]);
                 //     Main.NewText(Schematica.placedSchematics.Count);
                 // }, cancelTokenSource.Token);
-                
-                SchematicaData.LoadSchematic(fileNames[index]);
-                Main.NewText(Schematica.placedSchematics.Count);
+
+                var sw = Stopwatch.StartNew();
+                SchematicaFileFormat.ImportSchematica(fileNames[index]);
+
+                Console.WriteLine($"{sw.ElapsedMilliseconds}");
             };
             
             testList.Add(tempItem);
