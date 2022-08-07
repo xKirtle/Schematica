@@ -33,12 +33,12 @@ public class Schematica : Mod
     
     internal static bool CanSelectEdges = true;
     internal static ModKeybind UITestBind;
-    internal static List<SchematicaData> placedSchematics;
+    internal static List<SchematicaData> placedSchematicas;
     internal static SchematicaData currentPreview;
 
     public override void Load() {
         UITestBind = KeybindLoader.RegisterKeybind(this, "Empty", "X");
-        placedSchematics = new List<SchematicaData>();
+        placedSchematicas = new List<SchematicaData>();
         
         bool[] selected = new bool[2];
         string[] textureNames = new[] { "FloppyDisk", "Schematica" };
@@ -83,17 +83,7 @@ public class Schematica : Mod
                                 SoundEngine.PlaySound(SoundID.MenuTick);
         
                                 // SchematicaWindowState.Instance.ToggleSaveNamePopup();
-                                
-                                // ThreadPool.QueueUserWorkItem(state => SchematicData.SaveSchematic());
-                                // SchematicaData.SaveSchematic();
 
-                                // var sw = Stopwatch.StartNew();
-                                // for (int j = 0; j < 10; j++) {
-                                //     SchematicaFileFormat.ExportSchematica("BinarySchematica" + j);
-                                // }
-                                //
-                                // Console.WriteLine(sw.ElapsedMilliseconds / 10f);
-                                
                                 Task.Factory.StartNew(() => SchematicaFileFormat.ExportSchematica("BinarySchematica"))
                                     .ContinueWith(_ => {
                                             Main.NewText("Finished Exporting");

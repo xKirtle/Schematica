@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
@@ -151,22 +153,40 @@ public class SearchSchematicaWindow : DraggableUIPanel
 
             int index = i;
             button.OnClick += (__, _) => {
-                Console.WriteLine($"{Schematica.currentPreview.Name} {Schematica.placedSchematics.Count}");
-                Schematica.placedSchematics.Add(Schematica.currentPreview);
-                Console.WriteLine($"New count: {Schematica.placedSchematics.Count}");
+                if (!Schematica.placedSchematicas.Any(x => x.Name == Schematica.currentPreview.Name)) {
+                    Schematica.placedSchematicas.Add(Schematica.currentPreview);
+                }
             };
             
             tempItem.HeaderClick += () => {
-                // cancelTokenSource.Cancel();
-                // Task loadingSchematic = new Task(() => {
-                //     SchematicaData.LoadSchematic(fileNames[index]);
-                //     Main.NewText(Schematica.placedSchematics.Count);
-                // }, cancelTokenSource.Token);
+                //Start task facotry to import, start loading animation and end it once task finishes
 
-                var sw = Stopwatch.StartNew();
-                SchematicaFileFormat.ImportSchematica(fileNames[index]);
+                // if (Schematica.placedSchematics.Any(x => x.Name == fileNames[index])) {
+                //     Schematica.currentPreview = Schematica.placedSchematics.Find(x => x.Name == fileNames[index]);
+                //     Console.WriteLine("Already Present");
+                //     return;
+                // }
+                //
+                // var sw = Stopwatch.StartNew();
+                // Schematica.currentPreview = SchematicaFileFormat.ImportSchematica(fileNames[index], true);
+                // Console.WriteLine($"{sw.ElapsedMilliseconds}");
+                
+                //Start loading animation
 
-                Console.WriteLine($"{sw.ElapsedMilliseconds}");
+                //Check if not on placedSchematicas.. otherwise return from there
+                
+                //A large world takes up around 1.1GB of memory when loaded!
+                Task.Factory.StartNew(() => SchematicaFileFormat.ImportSchematica(fileNames[index]))
+                    .ContinueWith(
+                        task => {
+                            Schematica.currentPreview = task.Result;
+                            
+                            if (!Schematica.placedSchematicas.Any(x => x.Name == task.Result.Name))
+                                Schematica.placedSchematicas.Add(task.Result);
+                            
+                            Console.WriteLine($"Finished Importing! {Schematica.placedSchematicas.Count}");
+                        }
+                    );
             };
             
             testList.Add(tempItem);

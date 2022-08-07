@@ -30,7 +30,7 @@ public class SchematicaData
         if (Schematica.currentPreview?.Name == filename)
             return;
         
-        foreach (SchematicaData schematica in Schematica.placedSchematics) {
+        foreach (SchematicaData schematica in Schematica.placedSchematicas) {
             if (schematica.Name == filename) {
                 Console.WriteLine("found");
                 Schematica.currentPreview = schematica;

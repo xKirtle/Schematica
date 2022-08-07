@@ -19,33 +19,6 @@ public static class Utilities
         return Directory.GetFiles(directoryFullPath).Select(x => FileNamesRegex.Match(x).Value.Split(".")[^2]).ToList();
     }
 
-    /// <param name="sourcePath">Full path of the compressed source file</param>
-    /// <returns>Stream of the contents of the compressed source file</returns>
-    public static Stream GetStreamFromCompressedFile(string sourcePath) {
-        Stream stream = null;
-        ZipFile file = null;
-        try {
-            using var fileStream = File.OpenRead(sourcePath);
-            file = new ZipFile(fileStream);
-            stream = file.GetInputStream(file[0]);
-        }
-        catch (Exception e) {
-#if !DEBUG
-            ModContent.GetInstance<Schematica>().Logger.Warn(e);
-#else       
-            Console.WriteLine(e);
-#endif
-        }
-        finally {
-            if (file != null) {
-                file.IsStreamOwner = true;
-                file.Close();
-            }
-        }
-
-        return stream;
-    }
-    
     public static string[] GetEnabledModsList() {
         string path = $@"{Path.Combine(Main.SavePath)}\Mods\enabled.json";
         
