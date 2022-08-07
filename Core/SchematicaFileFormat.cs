@@ -15,10 +15,11 @@ public static class SchematicaFileFormat
     internal static int TileDataByteSize => 14;
     
     /*
-     * Header           -> 10 bytes that spell out 'SCHEMATICA' in ASCII characters
-     * Version          -> String that holds mod version it was made with
-     * Schematica Size  -> 2 ushort values (x and y)
-     * Schematica Data  -> Read bytes until end of file
+     * Header               -> 10 bytes that spell out 'SCHEMATICA' in ASCII characters
+     * Version              -> String that holds mod version it was made with
+     * Schematica Size      -> 2 ushort values (x and y)
+     * Schematica Data      -> Read bytes until end of file
+     * (Not implemented)    -> List of mods enabled? (warn when they don't match, schematic might be wrong)
      */
     
     public static void ExportSchematica(string fileName) {
