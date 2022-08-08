@@ -14,18 +14,20 @@ namespace Schematica.Core;
 
 public static class Utilities
 {
-    private static Regex FileNamesRegex = new Regex("(?:(?!\\\\).)+$");
-    public static List<string> FileNamesInDirectory(string directoryFullPath) {
-        return Directory.GetFiles(directoryFullPath).Select(x => FileNamesRegex.Match(x).Value.Split(".")[^2]).ToList();
-    }
+    public static List<string> GetEnabledModsList() {
+        string enabledModsPath = $@"{Path.Combine(Main.SavePath)}\Mods\enabled.json";
+        string[] modNames = JsonConvert.DeserializeObject<string[]>(File.ReadAllText(enabledModsPath));
 
-    public static string[] GetEnabledModsList() {
-        string path = $@"{Path.Combine(Main.SavePath)}\Mods\enabled.json";
-        
-        using StreamReader sr = new StreamReader(File.ReadAllText(path));
-        using JsonTextReader reader = new JsonTextReader(sr);
-        JsonSerializer serializer = new JsonSerializer();
+        string lastLaunchedModsPath = $@"{Path.Combine(Main.SavePath)}\LastLaunchedMods.txt";
+        string[] lastLaunchedModsList = File.ReadAllLines(lastLaunchedModsPath);
 
-        return serializer.Deserialize<string[]>(reader);
+        List<string> curatedModsList = new List<string>();
+        for (int i = 0; i < lastLaunchedModsList.Length; i++) {
+            if (modNames.Contains(lastLaunchedModsList[i].Split(" ")[0])) {
+                curatedModsList.Add(lastLaunchedModsList[i]);
+            }
+        }
+
+        return curatedModsList;
     }
 }

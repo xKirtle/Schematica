@@ -20,10 +20,10 @@ public static class SchematicaFileFormat
      * Header               -> 10 bytes that spell out 'SCHEMATICA' in ASCII characters
      * Version              -> String that holds mod version it was made with
      * Schematica Size      -> 2 ushort values (x and y)
+     * (Not implemented)    -> List of mods enabled? (warn when they don't match, schematic might be wrong)
      *
      * Second .dat file in zip
      * Schematica Data      -> Read bytes until end of file
-     * (Not implemented)    -> List of mods enabled? (warn when they don't match, schematic might be wrong)
      *
      * Third file in zip
      * Valid export flag    -> 1 bit (bool) that checks if export code reached the end
@@ -198,5 +198,51 @@ public static class SchematicaFileFormat
         memoryStream.SetLength(0);
 
         //flush diskOutput?
+    }
+    
+    public static List<string> GetValidSchematicas() {
+        List<string> list = new List<string>();
+        
+        //Create directory at mod startup if it doesn't exist?
+        if (!Directory.Exists(Schematica.SavePath))
+            return list;
+        
+        foreach (string file in Directory.GetFiles(Schematica.SavePath)) {
+            string fileName = Path.GetFileNameWithoutExtension(file);
+            
+            if (list.Contains(fileName))
+                continue;
+
+            try {
+                //If file is not valid, skip
+                using (var zipFile = new ZipFile(File.OpenRead(file))) {
+                    if (zipFile.Count != 3 ||
+                        zipFile.FindEntry("metadata.dat", false) == -1 ||
+                        zipFile.FindEntry("data.dat", false) == -1 ||
+                        zipFile.FindEntry("validation.dat", false) == -1)
+                        continue;
+                }
+
+                using (var inputStream = new ZipInputStream(File.OpenRead(file))) {
+                    using var memoryStream = new MemoryStream();
+                    inputStream.GetNextEntry();
+                    inputStream.CopyTo(memoryStream);
+
+                    //Setting back memoryStream to the start (gets left at the end with CopyTo)
+                    memoryStream.Position = 0;
+                    BinaryReader reader = new BinaryReader(memoryStream);
+
+                    if (reader.ReadString() != "SCHEMATICA")
+                        continue;
+
+                    list.Add(fileName);
+                }
+            }
+            catch (Exception e) {
+                //File could not be read because it was open elsewhere
+            }
+        }
+        
+        return list;
     }
 }
