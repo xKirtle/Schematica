@@ -8,8 +8,14 @@ namespace Schematica.Common;
 
 public class SchematicaPreview
 {
-    public static void DrawPreview(SchematicaData data, Vector2 position, float scale = 1f) {
-        // GraphicsDevice gd = Main.graphics.GraphicsDevice;
-        // SpriteBatch spriteBatch = Main.spriteBatch;
+    public static void DrawPreview(SchematicaData schematica, Vector2 position, float scale = 1f) {
+        for (int j = 0; j < schematica.Size.Y; j++) {
+            for (int i = 0; i < schematica.Size.X; i++) {
+                int listIndex = i + j * schematica.Size.X;
+                TileData tileData = schematica.data[listIndex];
+                
+                
+            }
+        }
     }
 }

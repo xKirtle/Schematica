@@ -79,7 +79,8 @@ public static class SchematicaFileFormat
             outputStream.PutNextEntry(schematicaDataZipEntry);
             
             //Kirtle: If I add an entry for each row, I could write each row in parallel? -> outputStream??
-
+            //Make temp folder in save directory, save metadata and each row into each own binary file, validate once all threads stop and zip into single archive?
+            
             //TileData
             for (int j = 0; j < size.Y; j++) {
                 for (int i = 0; i < size.X; i++) {

@@ -27,18 +27,14 @@ public class CompactTileData
     public CompactTileData(int x, int y) => new CompactTileData(Main.tile[x, y]);
 
     public CompactTileData(Tile tile) {
-        CompactTileData compactTileData = GenerateCompactTileData(this, tile.Get<TileTypeData>(), tile.Get<WallTypeData>(), tile.Get<LiquidData>(), tile.Get<TileWallWireStateData>());
-        // compactTileData.CopyTo(this);
+        GenerateCompactTileData(this, tile.Get<TileTypeData>(), tile.Get<WallTypeData>(), tile.Get<LiquidData>(), tile.Get<TileWallWireStateData>());
     }
 
     public CompactTileData(TileData tileData) {
-        CompactTileData compactTileData = GenerateCompactTileData(this, tileData.TileTypeData, tileData.WallTypeData, tileData.LiquidData, tileData.TileWallWireStateData);
-        // compactTileData.CopyTo(this);
+        GenerateCompactTileData(this, tileData.TileTypeData, tileData.WallTypeData, tileData.LiquidData, tileData.TileWallWireStateData);
     }
     
     public static CompactTileData GenerateCompactTileData(CompactTileData compactTileData, TileTypeData tileTypeData, WallTypeData wallTypeData, LiquidData liquidData, TileWallWireStateData tileWallWireStateData) {
-        // CompactTileData compactTileData = new CompactTileData();
-        
         compactTileData.TType = tileTypeData.Type;
         compactTileData.WType = wallTypeData.Type;
         
