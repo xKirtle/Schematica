@@ -87,8 +87,8 @@ public static class SchematicaFileFormat
                     }
 
                     Tile tile = Main.tile[minEdge.X + i, minEdge.Y + j];
-                    TileData tileData = new TileData(tile);
-                    tileData.Serialize(memoryWriter);
+                    CompactTileData compactTileData = new CompactTileData(tile);
+                    compactTileData.Serialize(memoryWriter);
                 }
             }
 
@@ -163,7 +163,7 @@ public static class SchematicaFileFormat
             schematica.Size = new Point(reader.ReadUInt16(), reader.ReadUInt16());
 
             if (!onlyMetadata) {
-                schematica.data = new List<TileData>();
+                schematica.data = new List<CompactTileData>();
                 memoryStream.SetLength(0);
                 inputStream.GetNextEntry(); //data.dat
 
@@ -171,9 +171,9 @@ public static class SchematicaFileFormat
                 memoryStream.Position = 0;
 
                 while (memoryStream.Position < memoryStream.Length) {
-                    TileData tileData = new TileData();
-                    tileData.Deserialize(reader);
-                    schematica.data.Add(tileData);
+                    CompactTileData compactTileData = new CompactTileData();
+                    compactTileData.Deserialize(reader);
+                    schematica.data.Add(compactTileData);
                 }
                 
                 if (schematica.data.Count != schematica.Size.X * schematica.Size.Y)
@@ -242,6 +242,11 @@ public static class SchematicaFileFormat
             }
             catch (Exception e) {
                 //File could not be read because it was open elsewhere
+#if !DEBUG
+            ModContent.GetInstance<Schematica>().Logger.Warn(e);
+#else
+                Console.WriteLine(e);
+#endif
             }
         }
         

@@ -181,7 +181,7 @@ public class SearchSchematicaWindow : DraggableUIPanel
 
                 //A large world takes up around 1.1GB of memory when loaded!
                 
-                //Check if the schematica we're trying to open is already in memory (placedSchematicas) or in cache (currentPreview)
+                //TODO: Check if the schematica we're trying to open is already in memory (placedSchematicas) or in cache (currentPreview)
 
                 if (!importSchematica?.IsCompleted ?? false)
                     cancellationTokenSource.Cancel();
