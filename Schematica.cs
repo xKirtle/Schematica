@@ -42,7 +42,7 @@ public class Schematica : Mod
         
         bool[] selected = new bool[2];
         string[] textureNames = new[] { "FloppyDisk", "Schematica" };
-
+        
         //TODO: No need to detour this.. Make my own UI and check if cross needs to be shown if Edges aren't pinned
         
         On.Terraria.Graphics.Capture.CaptureInterface.DrawButtons += (orig, self, sb) => {
@@ -78,17 +78,23 @@ public class Schematica : Mod
                     switch (i) {
                         case 0:
                             hoverText = "Save Current Selection";
-        
+                            
                             if (mouseClick && CaptureInterface.EdgeAPinned && CaptureInterface.EdgeBPinned) {
                                 SoundEngine.PlaySound(SoundID.MenuTick);
-        
-                                // SchematicaWindowState.Instance.ToggleSaveNamePopup();
                                 
-                                Task.Factory.StartNew(() => SchematicaFileFormat.ExportSchematica("BinarySchematica"))
+                                Task.Factory.StartNew(() => {
+                                            string fileName = "BinarySchematica"; //TODO: SchematicaWindowState.Instance.ToggleSaveNamePopup();
+                                            
+                                            //Removing from Accordion since it'll be unavailable until it finished exporting
+                                            SchematicaWindowState.Instance.WindowElement.TryRemoveAccordionItem(fileName);
+                                            
+                                            SchematicaFileFormat.ExportSchematica(fileName);
+                                        }
+                                    )
                                         .ContinueWith(
                                             _ => {
-                                                // Main.NewText("Finished Exporting");
                                                 Console.WriteLine("Finished Exporting");
+                                                SchematicaWindowState.Instance.WindowElement.TestingRepopulateWindow();
                                             }
                                         );
                             }

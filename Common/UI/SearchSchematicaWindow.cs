@@ -54,9 +54,6 @@ public class SchematicaWindowState : UIState
 public class SearchSchematicaWindow : DraggableUIPanel
 {
     private UIAccordion accordion;
-    private CancellationTokenSource cancelTokenSource;
-
-    public SearchSchematicaWindow() => cancelTokenSource = new CancellationTokenSource();
 
     public override void OnInitialize() {
         Width.Set(300f, 0f);
@@ -127,8 +124,10 @@ public class SearchSchematicaWindow : DraggableUIPanel
         }
     }
 
+    public void TryRemoveAccordionItem(string title) => accordion.accordianItems.Find(x => x.Title == title)?.Remove();
+
     public void TestingRepopulateWindow() {
-        List<string> fileNames = Utilities.FileNamesInDirectory($@"{Path.Combine(Main.SavePath)}\Schematica");
+        List<string> fileNames = SchematicaFileFormat.GetValidSchematicas();
         
         //Test, remove later
         List<UIAccordionItem> testList = new List<UIAccordionItem>(fileNames.Count);

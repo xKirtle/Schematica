@@ -15,7 +15,7 @@ namespace Schematica.Common.UI.UIElements;
 //WARNING: The UIGrid has no limit of items.. could affect performance if thousands of entries?
 public class UIAccordion : UIElement
 {
-    private List<UIAccordionItem> accordianItems;
+    public List<UIAccordionItem> accordianItems;
     public SmoothUIGrid Items;
     public UIScrollbar scrollbar;
     
