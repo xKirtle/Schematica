@@ -32,6 +32,7 @@ public class Schematica : Mod
     internal static int CompressionLevel = 9; //[0, 9] Bigger level => smaller files. May take longer to load/save schematicas
     
     internal static bool CanSelectEdges = true;
+    internal static bool CanRefreshSchematicasList = true;
     internal static ModKeybind UITestBind;
     internal static List<SchematicaData> placedSchematicas;
     internal static SchematicaData currentPreview;
@@ -87,6 +88,7 @@ public class Schematica : Mod
                                             
                                             //Removing from Accordion since it'll be unavailable until it finished exporting
                                             SchematicaWindowState.Instance.WindowElement.TryRemoveAccordionItem(fileName);
+                                            Schematica.CanRefreshSchematicasList = false;
                                             
                                             SchematicaFileFormat.ExportSchematica(fileName);
                                         }
@@ -94,6 +96,8 @@ public class Schematica : Mod
                                         .ContinueWith(
                                             _ => {
                                                 Console.WriteLine("Finished Exporting");
+                                                
+                                                Schematica.CanRefreshSchematicasList = true;
                                                 SchematicaWindowState.Instance.WindowElement.TestingRepopulateWindow();
                                             }
                                         );
@@ -105,7 +109,9 @@ public class Schematica : Mod
                             if (mouseClick) {
                                 SoundEngine.PlaySound(SoundID.MenuTick);
                                 selected[i] = !selected[i];
-                                SchematicaWindowState.Instance.WindowElement.TestingRepopulateWindow();
+                                
+                                if (Schematica.CanRefreshSchematicasList)
+                                    SchematicaWindowState.Instance.WindowElement.TestingRepopulateWindow();
 
                                 if (selected[i])
                                     SchematicaUISystem.Instance.Activate();

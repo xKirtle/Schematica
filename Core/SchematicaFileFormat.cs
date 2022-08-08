@@ -13,6 +13,8 @@ namespace Schematica.Core;
 
 public static class SchematicaFileFormat
 {
+    //TODO: Provide faster alternative that doesn't take 33s to export a large world, but consumes a lot more memory in the config
+    //Json.NET Serialization with direct streams..?
     internal static int TileDataByteSize => 14;
 
     /*
