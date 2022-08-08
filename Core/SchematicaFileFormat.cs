@@ -78,6 +78,8 @@ public static class SchematicaFileFormat
             schematicaDataZipEntry.DateTime = DateTime.Now;
             outputStream.PutNextEntry(schematicaDataZipEntry);
             
+            //Kirtle: If I add an entry for each row, I could write each row in parallel? -> outputStream??
+
             //TileData
             for (int j = 0; j < size.Y; j++) {
                 for (int i = 0; i < size.X; i++) {
@@ -163,7 +165,7 @@ public static class SchematicaFileFormat
             schematica.Size = new Point(reader.ReadUInt16(), reader.ReadUInt16());
 
             if (!onlyMetadata) {
-                schematica.data = new List<CompactTileData>();
+                schematica.data = new List<TileData>();
                 memoryStream.SetLength(0);
                 inputStream.GetNextEntry(); //data.dat
 
@@ -173,7 +175,7 @@ public static class SchematicaFileFormat
                 while (memoryStream.Position < memoryStream.Length) {
                     CompactTileData compactTileData = new CompactTileData();
                     compactTileData.Deserialize(reader);
-                    schematica.data.Add(compactTileData);
+                    schematica.data.Add(compactTileData.ToTileData());
                 }
                 
                 if (schematica.data.Count != schematica.Size.X * schematica.Size.Y)

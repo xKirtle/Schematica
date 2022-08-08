@@ -26,49 +26,53 @@ public class CompactTileData
 
     public CompactTileData(int x, int y) => new CompactTileData(Main.tile[x, y]);
 
-    public CompactTileData(Tile tile) => CopyFromTile(tile);
+    public CompactTileData(Tile tile) {
+        CompactTileData compactTileData = GenerateCompactTileData(this, tile.Get<TileTypeData>(), tile.Get<WallTypeData>(), tile.Get<LiquidData>(), tile.Get<TileWallWireStateData>());
+        // compactTileData.CopyTo(this);
+    }
 
     public CompactTileData(TileData tileData) {
-        TType = tileData.TileTypeData.Type;
-        WType = tileData.WallTypeData.Type;
-
-        LiquidData lData = tileData.LiquidData;
-        LAmount = lData.Amount;
-        LFlags = (byte) TileDataPacking.Pack(lData.LiquidType, LFlags, 0, 6);
-        LFlags = (byte) TileDataPacking.SetBit(lData.SkipLiquid, LFlags, 6);
-        LFlags = (byte) TileDataPacking.SetBit(lData.CheckingLiquid, LFlags, 7);
-
-
-        TileWallWireStateData data = tileData.TileWallWireStateData;
-        TFrameX = data.TileFrameX;
-        TFrameY = data.TileFrameY;
-        
-        TBitpack = TileDataPacking.SetBit(data.HasTile, TBitpack, 0);
-        TBitpack = TileDataPacking.SetBit(data.IsActuated, TBitpack, 1);
-        TBitpack = TileDataPacking.SetBit(data.HasActuator, TBitpack, 2);
-
-        TBitpack = TileDataPacking.Pack(data.TileColor, TBitpack, 3, 5);
-        TBitpack = TileDataPacking.Pack(data.WallColor, TBitpack, 8, 5);
-        
-        TBitpack = TileDataPacking.Pack(data.TileFrameNumber, TBitpack, 13, 2);
-        TBitpack = TileDataPacking.Pack(data.WallFrameNumber, TBitpack, 15, 2);
-        
-        TBitpack = TileDataPacking.Pack(data.WallFrameX / 36, TBitpack, 17, 4);
-        TBitpack = TileDataPacking.Pack(data.WallFrameY / 36, TBitpack, 21, 3);
-        
-        TBitpack = TileDataPacking.SetBit(data.IsHalfBlock, TBitpack, 24);
-        TBitpack = TileDataPacking.Pack((int) data.Slope, TBitpack, 25, 3);
-
-        TBitpack = TileDataPacking.Pack(data.WireData, TBitpack, 28, 4);
-        TBitpack = TileDataPacking.SetBit(data.RedWire, TBitpack, 28);
-        TBitpack = TileDataPacking.SetBit(data.BlueWire, TBitpack, 29);
-        TBitpack = TileDataPacking.SetBit(data.GreenWire, TBitpack, 30);
-        TBitpack = TileDataPacking.SetBit(data.YellowWire, TBitpack, 31);
+        CompactTileData compactTileData = GenerateCompactTileData(this, tileData.TileTypeData, tileData.WallTypeData, tileData.LiquidData, tileData.TileWallWireStateData);
+        // compactTileData.CopyTo(this);
     }
     
-    public CompactTileData CopyFromTile(Tile tile) {
-        TileData tileData = new TileData(tile);
-        return new CompactTileData(tileData);
+    public static CompactTileData GenerateCompactTileData(CompactTileData compactTileData, TileTypeData tileTypeData, WallTypeData wallTypeData, LiquidData liquidData, TileWallWireStateData tileWallWireStateData) {
+        // CompactTileData compactTileData = new CompactTileData();
+        
+        compactTileData.TType = tileTypeData.Type;
+        compactTileData.WType = wallTypeData.Type;
+        
+        compactTileData.LAmount = liquidData.Amount;
+        compactTileData.LFlags = (byte) TileDataPacking.Pack(liquidData.LiquidType, compactTileData.LFlags, 0, 6);
+        compactTileData.LFlags = (byte) TileDataPacking.SetBit(liquidData.SkipLiquid, compactTileData.LFlags, 6);
+        compactTileData.LFlags = (byte) TileDataPacking.SetBit(liquidData.CheckingLiquid, compactTileData.LFlags, 7);
+        
+        compactTileData.TFrameX = tileWallWireStateData.TileFrameX;
+        compactTileData.TFrameY = tileWallWireStateData.TileFrameY;
+        
+        compactTileData.TBitpack = TileDataPacking.SetBit(tileWallWireStateData.HasTile, compactTileData.TBitpack, 0);
+        compactTileData.TBitpack = TileDataPacking.SetBit(tileWallWireStateData.IsActuated, compactTileData.TBitpack, 1);
+        compactTileData.TBitpack = TileDataPacking.SetBit(tileWallWireStateData.HasActuator, compactTileData.TBitpack, 2);
+
+        compactTileData.TBitpack = TileDataPacking.Pack(tileWallWireStateData.TileColor, compactTileData.TBitpack, 3, 5);
+        compactTileData.TBitpack = TileDataPacking.Pack(tileWallWireStateData.WallColor, compactTileData.TBitpack, 8, 5);
+        
+        compactTileData.TBitpack = TileDataPacking.Pack(tileWallWireStateData.TileFrameNumber, compactTileData.TBitpack, 13, 2);
+        compactTileData.TBitpack = TileDataPacking.Pack(tileWallWireStateData.WallFrameNumber, compactTileData.TBitpack, 15, 2);
+        
+        compactTileData.TBitpack = TileDataPacking.Pack(tileWallWireStateData.WallFrameX / 36, compactTileData.TBitpack, 17, 4);
+        compactTileData.TBitpack = TileDataPacking.Pack(tileWallWireStateData.WallFrameY / 36, compactTileData.TBitpack, 21, 3);
+        
+        compactTileData.TBitpack = TileDataPacking.SetBit(tileWallWireStateData.IsHalfBlock, compactTileData.TBitpack, 24);
+        compactTileData.TBitpack = TileDataPacking.Pack((int) tileWallWireStateData.Slope, compactTileData.TBitpack, 25, 3);
+
+        compactTileData.TBitpack = TileDataPacking.Pack(tileWallWireStateData.WireData, compactTileData.TBitpack, 28, 4);
+        compactTileData.TBitpack = TileDataPacking.SetBit(tileWallWireStateData.RedWire, compactTileData.TBitpack, 28);
+        compactTileData.TBitpack = TileDataPacking.SetBit(tileWallWireStateData.BlueWire, compactTileData.TBitpack, 29);
+        compactTileData.TBitpack = TileDataPacking.SetBit(tileWallWireStateData.GreenWire, compactTileData.TBitpack, 30);
+        compactTileData.TBitpack = TileDataPacking.SetBit(tileWallWireStateData.YellowWire, compactTileData.TBitpack, 31);
+
+        return compactTileData;
     }
 
     public TileData ToTileData() {
@@ -124,6 +128,16 @@ public class CompactTileData
         tile.Get<WallTypeData>() = tileData.WallTypeData;
         tile.Get<LiquidData>() = tileData.LiquidData;
         tile.Get<TileWallWireStateData>() = tileData.TileWallWireStateData;
+    }
+
+    public void CopyTo(CompactTileData compactTileData) {
+        compactTileData.TType = TType;
+        compactTileData.WType = WType;
+        compactTileData.LAmount = LAmount;
+        compactTileData.LFlags = LFlags;
+        compactTileData.TFrameX = TFrameX;
+        compactTileData.TFrameY = TFrameY;
+        compactTileData.TBitpack = TBitpack;
     }
 
     public void Serialize(BinaryWriter writer) {

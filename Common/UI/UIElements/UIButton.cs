@@ -8,7 +8,7 @@ namespace Schematica.Common.UI.UIElements;
 
 public class UIButton : UIPanel
 {
-    private string text;
+    public string Text => uiText.Text;
     private UIText uiText;
     
     public UIButton(string text) {
@@ -38,6 +38,8 @@ public class UIButton : UIPanel
             Top.Set(Top.Pixels - 1f, 0f);
         };
     }
+
+    public void SetText(string text) => uiText.SetText(text);
 
     public override void Update(GameTime gameTime) => base.Update(gameTime);
 }

@@ -183,6 +183,8 @@ public class SearchSchematicaWindow : DraggableUIPanel
                 
                 //TODO: Check if the schematica we're trying to open is already in memory (placedSchematicas) or in cache (currentPreview)
 
+                Stopwatch sw = Stopwatch.StartNew();
+
                 if (!importSchematica?.IsCompleted ?? false)
                     cancellationTokenSource.Cancel();
 
@@ -201,6 +203,7 @@ public class SearchSchematicaWindow : DraggableUIPanel
                                 Schematica.placedSchematicas.Add(task.Result);
                             
                             Console.WriteLine($"Finished Importing! {Schematica.placedSchematicas.Count}");
+                            Console.WriteLine(sw.ElapsedMilliseconds);
                             
                         }
                     );

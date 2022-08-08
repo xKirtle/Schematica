@@ -24,7 +24,7 @@ public class SchematicaData
     public string Name { get; internal set; }
     public Point Size { get; internal set; }
     
-    public List<CompactTileData> data;
+    public List<TileData> data;
 
     public static void LoadSchematic(string filename) {
         if (Schematica.currentPreview?.Name == filename)
@@ -57,12 +57,12 @@ public class SchematicaData
         schematica.Size = new Point(Math.Abs(CaptureInterface.EdgeA.X - CaptureInterface.EdgeB.X) + 1, Math.Abs(CaptureInterface.EdgeA.Y - CaptureInterface.EdgeB.Y) + 1);
 
         Point minEdge = new Point(Math.Min(CaptureInterface.EdgeA.X, CaptureInterface.EdgeB.X), Math.Min(CaptureInterface.EdgeA.Y, CaptureInterface.EdgeB.Y));
-        schematica.data = new List<CompactTileData>();
+        schematica.data = new List<TileData>();
 
         for (int j = 0; j < schematica.Size.Y; j++) {
             for (int i = 0; i < schematica.Size.X; i++) {
                 Tile tile = Main.tile[minEdge.X + i, minEdge.Y + j];
-                schematica.data.Add(new CompactTileData(tile));
+                schematica.data.Add(new TileData(tile));
             }
         }
 
