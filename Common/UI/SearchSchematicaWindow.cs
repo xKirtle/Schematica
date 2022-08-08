@@ -25,6 +25,7 @@ public class SchematicaUISystem : UISystem<SchematicaWindowState>
 {
     public override InterfaceScaleType InterfaceScaleType => InterfaceScaleType.UI;
     public override VanillaInterfaceLayerID VanillaInterfaceLayer => VanillaInterfaceLayerID.Interface_Logic_1;
+    //Not displaying above the map
 
     public override void Load() {
         base.Load();

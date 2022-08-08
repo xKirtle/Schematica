@@ -24,9 +24,14 @@ public static class SchematicaFileFormat
      * Second .dat file in zip
      * Schematica Data      -> Read bytes until end of file
      * (Not implemented)    -> List of mods enabled? (warn when they don't match, schematic might be wrong)
+     *
+     * Third file in zip
+     * Valid export flag    -> 1 bit (bool) that checks if export code reached the end
      */
 
     public static void ExportSchematica(string fileName) {
+        Stopwatch sw = Stopwatch.StartNew();
+        
         if (String.IsNullOrEmpty(fileName))
             throw new ArgumentNullException("Cannot save schematica with an invalid name");
 
@@ -42,7 +47,7 @@ public static class SchematicaFileFormat
             Directory.CreateDirectory(Schematica.SavePath);
 
             string writePath = $@"{Schematica.SavePath}\{fileName}.schematica";
-            using var outputStream = new ZipOutputStream(File.Create(writePath)); //, Schematica.BufferSize);
+            using var outputStream = new ZipOutputStream(File.Create(writePath), Schematica.BufferSize);
             outputStream.SetLevel(Schematica.CompressionLevel);
 
             ZipEntry schematicaMetadataZipEntry = new ZipEntry("metadata.dat");
@@ -50,10 +55,9 @@ public static class SchematicaFileFormat
             outputStream.PutNextEntry(schematicaMetadataZipEntry);
 
             BinaryWriter zipWriter = new BinaryWriter(outputStream);
-
             using var memoryStream = new MemoryStream(Schematica.BufferSize);
             BinaryWriter memoryWriter = new BinaryWriter(memoryStream);
-
+            
             //Header
             memoryWriter.Write("SCHEMATICA");
 
@@ -71,7 +75,7 @@ public static class SchematicaFileFormat
             ZipEntry schematicaDataZipEntry = new ZipEntry("data.dat");
             schematicaDataZipEntry.DateTime = DateTime.Now;
             outputStream.PutNextEntry(schematicaDataZipEntry);
-
+            
             //TileData
             for (int j = 0; j < size.Y; j++) {
                 for (int i = 0; i < size.X; i++) {
@@ -86,12 +90,19 @@ public static class SchematicaFileFormat
                 }
             }
 
-            //Saving remaining info stuck in buffer
+            //Saving remaining info in buffer that didn't trigger write above
             memoryWriter.Flush(); //Ensures writer's data is flushed to its underlying stream (memoryStream)
             WriteMemoryToDisk(memoryStream, outputStream);
 
-            //TODO: Add one bit to signal whether file has finished saving? Since saving is async, the UI Window will display
-            //the file (which was created but not finalized) and user could try to load it when it's not ready yet
+            ZipEntry finalizingEntry = new ZipEntry("validation.dat");
+            finalizingEntry.DateTime = DateTime.Now;
+            outputStream.PutNextEntry(finalizingEntry);
+            
+            memoryWriter.Write(true);
+            memoryWriter.Flush(); //Ensures writer's data is flushed to its underlying stream (memoryStream)
+            WriteMemoryToDisk(memoryStream, outputStream);
+
+            Console.WriteLine($"{fileName} {sw.ElapsedMilliseconds}");
         }
         catch (Exception e) {
 #if !DEBUG
@@ -124,10 +135,16 @@ public static class SchematicaFileFormat
         try {
             Stream memoryStream = new MemoryStream(Schematica.BufferSize);
             string readPath = $@"{Schematica.SavePath}\{fileName}.schematica";
-            using var inputStream = new ZipInputStream(File.OpenRead(readPath)); //Still 
-            inputStream.GetNextEntry();
-            inputStream.CopyTo(memoryStream);
 
+            using (var zipFile = new ZipFile(File.OpenRead(readPath))) {
+                if (zipFile.FindEntry("validation.dat", false) == -1)
+                    throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
+            }
+            
+            using var inputStream = new ZipInputStream(File.OpenRead(readPath));
+            inputStream.GetNextEntry(); //metadata.dat
+            inputStream.CopyTo(memoryStream);
+            
             //Setting back memoryStream to the start (gets left at the end with CopyTo)
             memoryStream.Position = 0;
 
@@ -146,8 +163,8 @@ public static class SchematicaFileFormat
             if (!onlyMetadata) {
                 schematica.data = new List<TileData>();
                 memoryStream.SetLength(0);
-                inputStream.GetNextEntry();
-                
+                inputStream.GetNextEntry(); //data.dat
+
                 inputStream.CopyTo(memoryStream);
                 memoryStream.Position = 0;
 
@@ -156,6 +173,9 @@ public static class SchematicaFileFormat
                     tileData.Deserialize(reader);
                     schematica.data.Add(tileData);
                 }
+                
+                if (schematica.data.Count != schematica.Size.X * schematica.Size.Y)
+                    throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
             }
 
             return schematica;

@@ -28,7 +28,7 @@ namespace Schematica;
 public class Schematica : Mod
 {
     public static string SavePath = $@"{Path.Combine(Main.SavePath)}\{nameof(Schematica)}";
-    internal static int BufferSize = 4096; //.NET's default buffer is 4KB
+    internal static int BufferSize = 4096 * 37; //.NET's default buffer is 4KB, I'm using around 150KB
     internal static int CompressionLevel = 9; //[0, 9] Bigger level => smaller files. May take longer to load/save schematicas
     
     internal static bool CanSelectEdges = true;
@@ -83,13 +83,14 @@ public class Schematica : Mod
                                 SoundEngine.PlaySound(SoundID.MenuTick);
         
                                 // SchematicaWindowState.Instance.ToggleSaveNamePopup();
-
+                                
                                 Task.Factory.StartNew(() => SchematicaFileFormat.ExportSchematica("BinarySchematica"))
-                                    .ContinueWith(_ => {
-                                            Main.NewText("Finished Exporting");
-                                            Console.WriteLine("Finished Exporting");
-                                        }
-                                    );
+                                        .ContinueWith(
+                                            _ => {
+                                                // Main.NewText("Finished Exporting");
+                                                Console.WriteLine("Finished Exporting");
+                                            }
+                                        );
                             }
                             break;
                         case 1:
