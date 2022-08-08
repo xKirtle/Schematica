@@ -54,8 +54,12 @@ public class SchematicaWindowState : UIState
 public class SearchSchematicaWindow : DraggableUIPanel
 {
     private UIAccordion accordion;
-
+    private CancellationTokenSource cancellationTokenSource;
+    private Task importSchematica;
+    
     public override void OnInitialize() {
+        cancellationTokenSource = new CancellationTokenSource();
+
         Width.Set(300f, 0f);
         Height.Set(500f, 0f);
         Left.Set(24f, 0f);
@@ -174,17 +178,30 @@ public class SearchSchematicaWindow : DraggableUIPanel
                 //Start loading animation
 
                 //Check if not on placedSchematicas.. otherwise return from there
-                
+
                 //A large world takes up around 1.1GB of memory when loaded!
-                Task.Factory.StartNew(() => SchematicaFileFormat.ImportSchematica(fileNames[index]))
+                
+                //Check if the schematica we're trying to open is already in memory (placedSchematicas) or in cache (currentPreview)
+
+                if (!importSchematica?.IsCompleted ?? false)
+                    cancellationTokenSource.Cancel();
+
+                importSchematica = Task.Factory.StartNew(() => SchematicaFileFormat.ImportSchematica(fileNames[index]), cancellationTokenSource.Token)
                     .ContinueWith(
                         task => {
+                            //Setting up a new cancellation token after this one was used
+                            cancellationTokenSource = new CancellationTokenSource();
+                            
+                            if (task.IsCanceled)
+                                return;
+
                             Schematica.currentPreview = task.Result;
                             
                             if (!Schematica.placedSchematicas.Any(x => x.Name == task.Result.Name))
                                 Schematica.placedSchematicas.Add(task.Result);
                             
                             Console.WriteLine($"Finished Importing! {Schematica.placedSchematicas.Count}");
+                            
                         }
                     );
             };
