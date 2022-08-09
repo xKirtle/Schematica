@@ -13,8 +13,6 @@ namespace Schematica.Core;
 
 public static class SchematicaFileFormat
 {
-    //TODO: Provide faster alternative that doesn't take 33s to export a large world, but consumes a lot more memory in the config
-    //Json.NET Serialization with direct streams..?
     internal static int TileDataByteSize => 14;
 
     /*
@@ -78,16 +76,14 @@ public static class SchematicaFileFormat
             schematicaDataZipEntry.DateTime = DateTime.Now;
             outputStream.PutNextEntry(schematicaDataZipEntry);
             
-            //Kirtle: If I add an entry for each row, I could write each row in parallel? -> outputStream??
-            //Make temp folder in save directory, save metadata and each row into each own binary file, validate once all threads stop and zip into single archive?
-            
             //TileData
             for (int j = 0; j < size.Y; j++) {
                 for (int i = 0; i < size.X; i++) {
-                    if (memoryStream.Length + TileDataByteSize > memoryStream.Capacity) {
-                        memoryWriter.Flush(); //Ensures writer's data is flushed to its underlying stream (memoryStream)
-                        WriteMemoryToDisk(memoryStream, outputStream);
-                    }
+                    //It's actually slower to do that many write calls. Memory reduction gain from this is negligible
+                    // if (memoryStream.Length + TileDataByteSize > memoryStream.Capacity) {
+                    //     memoryWriter.Flush(); //Ensures writer's data is flushed to its underlying stream (memoryStream)
+                    //     WriteMemoryToDisk(memoryStream, outputStream);
+                    // }
 
                     Tile tile = Main.tile[minEdge.X + i, minEdge.Y + j];
                     CompactTileData compactTileData = new CompactTileData(tile);

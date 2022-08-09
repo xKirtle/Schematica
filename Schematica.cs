@@ -28,17 +28,23 @@ namespace Schematica;
 public class Schematica : Mod
 {
     public static string SavePath = $@"{Path.Combine(Main.SavePath)}\{nameof(Schematica)}";
-    internal static int BufferSize = 4096 * 37; //.NET's default buffer is 4KB, I'm using around 150KB
-    internal static int CompressionLevel = 9; //[0, 9] Bigger level => smaller files. May take longer to load/save schematicas
     
+    //Taking at max 500MB to save a Large world
+    //at compression level 9 -> Large world was +- 7000KB and took 33s to save
+    //at compression level 1 -> Large world was +- 12000KB and took 4.4s to save
+    internal static int BufferSize = 4096 * 37; //.NET's default buffer is 4KB, I'm using around 150KB
+    internal static int CompressionLevel = 1; //[0, 9] Bigger level => smaller files. May take longer to load/save schematicas
+
     internal static bool CanSelectEdges = true;
     internal static bool CanRefreshSchematicasList = true;
     internal static ModKeybind UITestBind;
+    internal static ModKeybind TestSetEdges;
     internal static List<SchematicaData> placedSchematicas;
     internal static SchematicaData currentPreview;
 
     public override void Load() {
         UITestBind = KeybindLoader.RegisterKeybind(this, "Empty", "X");
+        TestSetEdges = KeybindLoader.RegisterKeybind(this, "Edges", "R");
         placedSchematicas = new List<SchematicaData>();
         
         bool[] selected = new bool[2];
@@ -209,6 +215,13 @@ public class KeyBindPlayer : ModPlayer
     public override void ProcessTriggers(TriggersSet triggersSet) {
         if (Schematica.UITestBind.JustPressed) {
             SchematicaWindowState.Instance.WindowElement.TestingRepopulateWindow();
+        }
+
+        if (Schematica.TestSetEdges.JustPressed) {
+            CaptureInterface.EdgeA = Point.Zero;
+            CaptureInterface.EdgeB = new Point(Main.maxTilesX - 1, Main.maxTilesY - 1);
+
+            CaptureInterface.EdgeAPinned = CaptureInterface.EdgeBPinned = true;
         }
     }
 }
