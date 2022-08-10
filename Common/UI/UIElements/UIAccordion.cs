@@ -54,7 +54,7 @@ public class UIAccordion : UIElement
         
         //Bind events
         foreach (UIAccordionItem accordianItem in accordianItems) {
-            accordianItem.HeaderClick += () => {
+            accordianItem.HeaderOnClick += (__, _) => {
                 if (SelectedItem != accordianItem)
                     SelectedItem?.ToggleOpen();
                 

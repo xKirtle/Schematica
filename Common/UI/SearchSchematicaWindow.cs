@@ -1,7 +1,6 @@
-﻿using System;
+﻿
+
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +13,7 @@ using Schematica.Common.Systems;
 using Schematica.Common.UI.UIElements;
 using Schematica.Core;
 using Terraria;
+using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
 using Terraria.Graphics.Capture;
 using Terraria.Localization;
@@ -84,7 +84,7 @@ public class SearchSchematicaWindow : DraggableUIPanel
         
         Append(accordion);
         
-        TestingRepopulateWindow();
+        RepopulateSchematicas();
     }
 
     private UIPanel searchAreaPanel;
@@ -120,7 +120,7 @@ public class SearchSchematicaWindow : DraggableUIPanel
 
     public override void Update(GameTime gameTime) {
         base.Update(gameTime);
-
+        
         Schematica.CanSelectEdges = true;
         if (IsMouseHovering) {
             Schematica.CanSelectEdges = false;
@@ -130,90 +130,44 @@ public class SearchSchematicaWindow : DraggableUIPanel
 
     public void TryRemoveAccordionItem(string title) => accordion.accordianItems.Find(x => x.Title == title)?.Remove();
 
-    public void TestingRepopulateWindow() {
-        List<string> fileNames = SchematicaFileFormat.GetValidSchematicas();
+    public void RepopulateSchematicas() {
+        List<string> validSchematicaNames = SchematicaFileFormat.GetValidSchematicas();
+        List<UIAccordionItem> accordionItems = new List<UIAccordionItem>(validSchematicaNames.Count);
         
-        //Test, remove later
-        List<UIAccordionItem> testList = new List<UIAccordionItem>(fileNames.Count);
-        for (int i = 0; i < fileNames.Count; i++) {
-            UIAccordionItem tempItem = new UIAccordionItem(fileNames[i], headerHeight: accordion.ItemHeight, bodyHeight: 308);
-            
-            UIPanel thumbnailPanel = new UIPanel() {
-                Width = StyleDimension.Fill,
-                Height = new StyleDimension(240f, 0f), //Can't make square by getting width's pixel value?
-                BackgroundColor = new Color(150, 40, 83)
-            };
-
-            tempItem.Body.Append(thumbnailPanel);
-
-            UIButton button = new UIButton("Place Schematica") {
-                Width = StyleDimension.Fill,
-                Height = new StyleDimension(35f, 0f),
-                Top = new StyleDimension(-2f, 0f),
-                VAlign = 1f
-            };
-            
-            tempItem.Body.Append(button);
-
-            int index = i;
-            button.OnClick += (__, _) => {
-                if (!Schematica.placedSchematicas.Any(x => x.Name == Schematica.currentPreview.Name)) {
-                    Schematica.placedSchematicas.Add(Schematica.currentPreview);
-                }
-            };
-            
-            tempItem.HeaderClick += () => {
-                //Start task facotry to import, start loading animation and end it once task finishes
-
-                // if (Schematica.placedSchematics.Any(x => x.Name == fileNames[index])) {
-                //     Schematica.currentPreview = Schematica.placedSchematics.Find(x => x.Name == fileNames[index]);
-                //     Console.WriteLine("Already Present");
-                //     return;
-                // }
-                //
-                // var sw = Stopwatch.StartNew();
-                // Schematica.currentPreview = SchematicaFileFormat.ImportSchematica(fileNames[index], true);
-                // Console.WriteLine($"{sw.ElapsedMilliseconds}");
-                
-                //Start loading animation
-
-                //Check if not on placedSchematicas.. otherwise return from there
-
-                //A large world takes up around 1.1GB of memory when loaded!
-                
-                //TODO: Check if the schematica we're trying to open is already in memory (placedSchematicas) or in cache (currentPreview)
-
-                Stopwatch sw = Stopwatch.StartNew();
-
-                if (!importSchematica?.IsCompleted ?? false)
-                    cancellationTokenSource.Cancel();
-
-                importSchematica = Task.Factory.StartNew(() => SchematicaFileFormat.ImportSchematica(fileNames[index]), cancellationTokenSource.Token)
-                    .ContinueWith(
-                        task => {
-                            //Setting up a new cancellation token after this one was used
-                            cancellationTokenSource = new CancellationTokenSource();
-                            
-                            if (task.IsCanceled)
-                                return;
-
-                            Schematica.currentPreview = task.Result;
-                            
-                            if (!Schematica.placedSchematicas.Any(x => x.Name == task.Result.Name))
-                                Schematica.placedSchematicas.Add(task.Result);
-                            
-                            Console.WriteLine($"Finished Importing! {Schematica.placedSchematicas.Count}");
-                            Console.WriteLine(sw.ElapsedMilliseconds);
-                            
-                        }
-                    );
-            };
-            
-            testList.Add(tempItem);
+        for (int i = 0; i < validSchematicaNames.Count; i++) {
+            accordionItems.Add(new SchematicaPreviewUIElement(validSchematicaNames[i], headerHeight: accordion.ItemHeight, bodyHeight: 308));
         }
-
-        accordion.UpdateItems(testList);
+        
+        accordion.UpdateItems(accordionItems);
     }
-
-    //MakeThumbnail -> What makes paint tools thumbnails
+    
+    // private void SchematicaHeaderClick(List<string> schematicaNames, int index, UIImage thumbnail) {
+    //     string name = schematicaNames[index];
+    //     if (Schematica.CurrentPreview?.Name == name || Schematica.PlacedSchematicas.Any(x => x.Name == name))
+    //         return;
+    //     
+    //     if (!importSchematica?.IsCompleted ?? false)
+    //         cancellationTokenSource.Cancel();
+    //
+    //     importSchematica = Task.Factory.StartNew(() => SchematicaFileFormat.ImportSchematica(name), cancellationTokenSource.Token)
+    //         .ContinueWith(
+    //             task => {
+    //                 cancellationTokenSource = new CancellationTokenSource();
+    //
+    //                 if (task.IsCanceled)
+    //                     return;
+    //
+    //                 Schematica.CurrentPreview = task.Result;
+    //                 Schematica.PlacedSchematicas.Add(task.Result);
+    //                 Schematica.GeneratePreviewQueue.Enqueue(() => {
+    //                         // Texture2D asd = Schematica.CurrentPreview.GeneratePreview();
+    //                         // thumbnail.SetImage(asd);
+    //                     }
+    //                 );
+    //
+    //                 //End loading animation
+    //             });
+    //
+    //     //Start loading animation
+    // }
 }

@@ -13,18 +13,16 @@ using Terraria.UI;
 
 namespace Schematica.Common.UI.UIElements;
 
-public class UIAccordionItem : UIElement
+public abstract class UIAccordionItem : UIElement
 {
+    public UIElement.MouseEvent HeaderOnClick;
+    
     public string Title { get; private set; }
-    
-    public UIElement Header { get; private set; }
-    
-    public UIElement Body { get; private set; }
-
     public bool IsOpen { get; private set; }
-    
+    protected UIElement Header { get; private set; }
+    protected UIElement Body { get; private set; }
+
     private UIElement innerBody;
-    public Action HeaderClick;
     private UIImageFramed arrow;
     private ScrollingUIText title;
     private Asset<Texture2D> arrowAsset;
@@ -43,6 +41,10 @@ public class UIAccordionItem : UIElement
         Append(Header);
 
         OverflowHidden = true;
+        
+        Header.OnClick += ((evt, element) => {
+            HeaderOnClick(evt, element);
+        });
     }
 
     private void GenerateHeader(int headerHeight) {
@@ -87,10 +89,6 @@ public class UIAccordionItem : UIElement
         panel.Append(arrow);
         
         //Bind Events
-        Header.OnClick += (__, _) => {
-            HeaderClick();
-        };
-
         Header.OnMouseOver += (__, _) => {
             panel.BackgroundColor = new Color(50, 58, 115);
             SoundEngine.PlaySound(SoundID.MenuTick);
@@ -121,7 +119,7 @@ public class UIAccordionItem : UIElement
         innerBody.Append(Body);
     }
 
-    public void ToggleOpen() {
+    public virtual void ToggleOpen() {
         IsOpen = !IsOpen;
 
         targetHeight = Header.Height.Pixels + (IsOpen ? innerBody.Height.Pixels - Header.Height.Pixels : 0) + 1f;

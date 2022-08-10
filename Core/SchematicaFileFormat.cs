@@ -25,22 +25,25 @@ public static class SchematicaFileFormat
      * Second .dat file in zip
      * Schematica Data      -> Read bytes until end of file
      *
-     * Third file in zip
+     * Third .jpg file in zip
+     * (Not implemented) Schematica Thumbnail Preview
+     * 
+     * Fourth file in zip
      * Valid export flag    -> 1 bit (bool) that checks if export code reached the end
      */
 
-    public static void ExportSchematica(string fileName) {
+    public static void ExportSchematica(string fileName, Point edgeA, Point edgeB) {
         Stopwatch sw = Stopwatch.StartNew();
         
         if (String.IsNullOrEmpty(fileName))
             throw new ArgumentNullException("Cannot save schematica with an invalid name");
 
-        Point size = new Point(Math.Abs(CaptureInterface.EdgeA.X - CaptureInterface.EdgeB.X) + 1, Math.Abs(CaptureInterface.EdgeA.Y - CaptureInterface.EdgeB.Y) + 1);
+        Point size = new Point(Math.Abs(edgeA.X - edgeB.X) + 1, Math.Abs(edgeA.Y - edgeB.Y) + 1);
 
         if (size == Point.Zero) //Save Button does not allow 
             throw new ArgumentException("Size of schematica cannot be zero");
 
-        Point minEdge = new Point(Math.Min(CaptureInterface.EdgeA.X, CaptureInterface.EdgeB.X), Math.Min(CaptureInterface.EdgeA.Y, CaptureInterface.EdgeB.Y));
+        Point minEdge = new Point(Math.Min(edgeA.X, edgeB.X), Math.Min(edgeA.Y, edgeB.Y));
 
         try {
             //Making sure Schematica's path exists
@@ -65,8 +68,8 @@ public static class SchematicaFileFormat
             memoryWriter.Write(ModContent.GetInstance<Schematica>().Version.ToString());
 
             //Schematica Size
-            memoryWriter.Write((ushort) size.X);
-            memoryWriter.Write((ushort) size.Y);
+            memoryWriter.Write(size.X);
+            memoryWriter.Write(size.Y);
 
             //Writing initial info to disk
             memoryWriter.Flush(); //Ensures writer's data is flushed to its underlying stream (memoryStream)
@@ -137,6 +140,7 @@ public static class SchematicaFileFormat
             Stream memoryStream = new MemoryStream(Schematica.BufferSize);
             string readPath = $@"{Schematica.SavePath}\{fileName}.schematica";
 
+            //This is done when fetching valid schematicas already?
             using (var zipFile = new ZipFile(File.OpenRead(readPath))) {
                 if (zipFile.FindEntry("validation.dat", false) == -1)
                     throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
@@ -159,10 +163,10 @@ public static class SchematicaFileFormat
             string schematicaModVersion = reader.ReadString();
 
             //Schematica Size
-            schematica.Size = new Point(reader.ReadUInt16(), reader.ReadUInt16());
+            schematica.Size = new Point(reader.ReadInt32(), reader.ReadInt32());
 
             if (!onlyMetadata) {
-                schematica.data = new List<TileData>();
+                schematica.TileDataList = new List<TileData>();
                 memoryStream.SetLength(0);
                 inputStream.GetNextEntry(); //data.dat
 
@@ -172,10 +176,10 @@ public static class SchematicaFileFormat
                 while (memoryStream.Position < memoryStream.Length) {
                     CompactTileData compactTileData = new CompactTileData();
                     compactTileData.Deserialize(reader);
-                    schematica.data.Add(compactTileData.ToTileData());
+                    schematica.TileDataList.Add(compactTileData.ToTileData());
                 }
                 
-                if (schematica.data.Count != schematica.Size.X * schematica.Size.Y)
+                if (schematica.TileDataList.Count != schematica.Size.X * schematica.Size.Y)
                     throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
             }
 

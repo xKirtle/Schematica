@@ -18,6 +18,7 @@ using Schematica.Core;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
+using Terraria.GameContent.UI.Elements;
 using Terraria.GameInput;
 using Terraria.Graphics.Capture;
 using Terraria.ID;
@@ -29,24 +30,29 @@ public class Schematica : Mod
 {
     public static string SavePath = $@"{Path.Combine(Main.SavePath)}\{nameof(Schematica)}";
     
+    //With an i7-10700k and an ssd m.2. samsung 970 evo:
     //Taking at max 500MB to save a Large world
     //at compression level 9 -> Large world was +- 7000KB and took 33s to save
     //at compression level 1 -> Large world was +- 12000KB and took 4.4s to save
+    //Small world takes 1.3s to import
+    //Large world takes 7.7s to import (kinda bad)
+    
     internal static int BufferSize = 4096 * 37; //.NET's default buffer is 4KB, I'm using around 150KB
     internal static int CompressionLevel = 1; //[0, 9] Bigger level => smaller files. May take longer to load/save schematicas
-
+    
     internal static bool CanSelectEdges = true;
     internal static bool CanRefreshSchematicasList = true;
+    
     internal static ModKeybind UITestBind;
     internal static ModKeybind TestSetEdges;
-    internal static List<SchematicaData> placedSchematicas;
-    internal static SchematicaData currentPreview;
+    internal static List<SchematicaData> PlacedSchematicas;
+    internal static SchematicaData CurrentPreview;
 
     public override void Load() {
         UITestBind = KeybindLoader.RegisterKeybind(this, "Empty", "X");
         TestSetEdges = KeybindLoader.RegisterKeybind(this, "Edges", "R");
-        placedSchematicas = new List<SchematicaData>();
-        
+        PlacedSchematicas = new List<SchematicaData>();
+
         bool[] selected = new bool[2];
         string[] textureNames = new[] { "FloppyDisk", "Schematica" };
         
@@ -96,7 +102,7 @@ public class Schematica : Mod
                                             SchematicaWindowState.Instance.WindowElement.TryRemoveAccordionItem(fileName);
                                             Schematica.CanRefreshSchematicasList = false;
                                             
-                                            SchematicaFileFormat.ExportSchematica(fileName);
+                                            SchematicaFileFormat.ExportSchematica(fileName, CaptureInterface.EdgeA, CaptureInterface.EdgeB);
                                         }
                                     )
                                         .ContinueWith(
@@ -104,7 +110,7 @@ public class Schematica : Mod
                                                 Console.WriteLine("Finished Exporting");
                                                 
                                                 Schematica.CanRefreshSchematicasList = true;
-                                                SchematicaWindowState.Instance.WindowElement.TestingRepopulateWindow();
+                                                SchematicaWindowState.Instance.WindowElement.RepopulateSchematicas();
                                             }
                                         );
                             }
@@ -117,7 +123,7 @@ public class Schematica : Mod
                                 selected[i] = !selected[i];
                                 
                                 if (Schematica.CanRefreshSchematicasList)
-                                    SchematicaWindowState.Instance.WindowElement.TestingRepopulateWindow();
+                                    SchematicaWindowState.Instance.WindowElement.RepopulateSchematicas();
 
                                 if (selected[i])
                                     SchematicaUISystem.Instance.Activate();
@@ -214,12 +220,12 @@ public class KeyBindPlayer : ModPlayer
 {
     public override void ProcessTriggers(TriggersSet triggersSet) {
         if (Schematica.UITestBind.JustPressed) {
-            SchematicaWindowState.Instance.WindowElement.TestingRepopulateWindow();
+            SchematicaWindowState.Instance.WindowElement.RepopulateSchematicas();
         }
 
         if (Schematica.TestSetEdges.JustPressed) {
             CaptureInterface.EdgeA = Point.Zero;
-            CaptureInterface.EdgeB = new Point(Main.maxTilesX - 1, Main.maxTilesY - 1);
+            CaptureInterface.EdgeB = new Point(Main.maxTilesX, Main.maxTilesY);
 
             CaptureInterface.EdgeAPinned = CaptureInterface.EdgeBPinned = true;
         }
