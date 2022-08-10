@@ -1,6 +1,4 @@
-﻿
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,7 +38,7 @@ public class SchematicaWindowState : UIState
 
     public override void OnInitialize() {
         Instance = this;
-        
+
         WindowElement = new SearchSchematicaWindow();
         Append(WindowElement);
     }
@@ -56,7 +54,7 @@ public class SearchSchematicaWindow : DraggableUIPanel
     private UIAccordion accordion;
     private CancellationTokenSource cancellationTokenSource;
     private Task importSchematica;
-    
+
     public override void OnInitialize() {
         cancellationTokenSource = new CancellationTokenSource();
 
@@ -74,16 +72,16 @@ public class SearchSchematicaWindow : DraggableUIPanel
         // };
 
         AddSearchBar(this);
-        
+
         //Accordion
         accordion = new UIAccordion(itemHeight: 40) {
             Width = StyleDimension.Fill,
             Height = new StyleDimension(-30f, 1f),
             Top = new StyleDimension(30f, 0f)
         };
-        
+
         Append(accordion);
-        
+
         RepopulateSchematicas();
     }
 
@@ -107,20 +105,20 @@ public class SearchSchematicaWindow : DraggableUIPanel
         searchAreaPanel.Append(searchBar);
 
         Asset<Texture2D> texture = Main.Assets.Request<Texture2D>("Images/UI/SearchCancel");
-        UIImageButton searchCancelCross = new UIImageButton(texture) {
+        UIImageButton searchCancelCross = new(texture) {
             HAlign = 1f,
             VAlign = 0.5f,
             Left = new StyleDimension(-2f, 0f)
         };
 
         searchAreaPanel.Append(searchCancelCross);
-        
+
         parent.Append(searchAreaPanel);
     }
 
     public override void Update(GameTime gameTime) {
         base.Update(gameTime);
-        
+
         Schematica.CanSelectEdges = true;
         if (IsMouseHovering) {
             Schematica.CanSelectEdges = false;
@@ -132,15 +130,13 @@ public class SearchSchematicaWindow : DraggableUIPanel
 
     public void RepopulateSchematicas() {
         List<string> validSchematicaNames = SchematicaFileFormat.GetValidSchematicas();
-        List<UIAccordionItem> accordionItems = new List<UIAccordionItem>(validSchematicaNames.Count);
-        
-        for (int i = 0; i < validSchematicaNames.Count; i++) {
-            accordionItems.Add(new SchematicaPreviewUIElement(validSchematicaNames[i], headerHeight: accordion.ItemHeight, bodyHeight: 308));
-        }
-        
+        List<UIAccordionItem> accordionItems = new(validSchematicaNames.Count);
+
+        for (int i = 0; i < validSchematicaNames.Count; i++) { accordionItems.Add(new SchematicaPreviewUIElement(validSchematicaNames[i], accordion.ItemHeight, 308)); }
+
         accordion.UpdateItems(accordionItems);
     }
-    
+
     // private void SchematicaHeaderClick(List<string> schematicaNames, int index, UIImage thumbnail) {
     //     string name = schematicaNames[index];
     //     if (Schematica.CurrentPreview?.Name == name || Schematica.PlacedSchematicas.Any(x => x.Name == name))

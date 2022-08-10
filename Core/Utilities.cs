@@ -21,11 +21,9 @@ public static class Utilities
         string lastLaunchedModsPath = $@"{Path.Combine(Main.SavePath)}\LastLaunchedMods.txt";
         string[] lastLaunchedModsList = File.ReadAllLines(lastLaunchedModsPath);
 
-        List<string> curatedModsList = new List<string>();
+        List<string> curatedModsList = new();
         for (int i = 0; i < lastLaunchedModsList.Length; i++) {
-            if (modNames.Contains(lastLaunchedModsList[i].Split(" ")[0])) {
-                curatedModsList.Add(lastLaunchedModsList[i]);
-            }
+            if (modNames.Contains(lastLaunchedModsList[i].Split(" ")[0])) { curatedModsList.Add(lastLaunchedModsList[i]); }
         }
 
         return curatedModsList;

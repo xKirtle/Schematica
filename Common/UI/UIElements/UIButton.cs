@@ -10,7 +10,7 @@ public class UIButton : UIPanel
 {
     public string Text => uiText.Text;
     private UIText uiText;
-    
+
     public UIButton(string text) {
         uiText = new UIText(text) {
             Width = StyleDimension.Fill,
@@ -18,7 +18,7 @@ public class UIButton : UIPanel
             HAlign = 0.5f,
             VAlign = 0.5f
         };
-        
+
         Append(uiText);
 
         OnMouseOver += (__, _) => {

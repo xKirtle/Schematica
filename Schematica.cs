@@ -29,20 +29,20 @@ namespace Schematica;
 public class Schematica : Mod
 {
     public static string SavePath = $@"{Path.Combine(Main.SavePath)}\{nameof(Schematica)}";
-    
+
     //With an i7-10700k and an ssd m.2. samsung 970 evo:
     //Taking at max 500MB to save a Large world
     //at compression level 9 -> Large world was +- 7000KB and took 33s to save
     //at compression level 1 -> Large world was +- 12000KB and took 4.4s to save
     //Small world takes 1.3s to import
     //Large world takes 7.7s to import (kinda bad)
-    
+
     internal static int BufferSize = 4096 * 37; //.NET's default buffer is 4KB, I'm using around 150KB
     internal static int CompressionLevel = 1; //[0, 9] Bigger level => smaller files. May take longer to load/save schematicas
-    
+
     internal static bool CanSelectEdges = true;
     internal static bool CanRefreshSchematicasList = true;
-    
+
     internal static ModKeybind UITestBind;
     internal static ModKeybind TestSetEdges;
     internal static List<SchematicaData> PlacedSchematicas;
@@ -55,74 +55,75 @@ public class Schematica : Mod
 
         bool[] selected = new bool[2];
         string[] textureNames = new[] { "FloppyDisk", "Schematica" };
-        
+
         //TODO: No need to detour this.. Make my own UI and check if cross needs to be shown if Edges aren't pinned
-        
+
         On.Terraria.Graphics.Capture.CaptureInterface.DrawButtons += (orig, self, sb) => {
             for (int i = 0; i < selected.Length; i++) {
                 Texture2D background = !selected[i] ? TextureAssets.InventoryBack.Value : TextureAssets.InventoryBack14.Value;
                 float scale = 0.8f;
-                Vector2 position = new Vector2(24 + 46 * i, 24f + 46f);
+                Vector2 position = new(24 + 46 * i, 24f + 46f);
                 Color color = Main.inventoryBack * 0.8f;
-        
+
                 sb.Draw(background, position, null, color, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
-        
+
                 Texture2D icon = ModContent.Request<Texture2D>($"Schematica/Assets/UI/{textureNames[i]}", AssetRequestMode.ImmediateLoad).Value;
                 sb.Draw(icon, position + new Vector2(26f) * scale, null, Color.White, 0f, icon.Size() / 2f, 1f, SpriteEffects.None, 0f);
-        
+
                 if (i == 0 && (!CaptureInterface.EdgeAPinned || !CaptureInterface.EdgeBPinned))
                     sb.Draw(TextureAssets.Cd.Value, position + new Vector2(26f) * scale, null, Color.White * 0.65f, 0f, TextureAssets.Cd.Value.Size() / 2f, 1f, SpriteEffects.None, 0f);
             }
-        
+
             orig.Invoke(self, sb);
         };
-        
+
         On.Terraria.Graphics.Capture.CaptureInterface.UpdateButtons += (orig, self, mouse) => {
             bool baseReturn = orig.Invoke(self, mouse);
             if (baseReturn)
                 return true;
-        
+
             for (int i = 0; i < selected.Length; i++) {
                 if (new Rectangle(24 + 46 * i, 24 + 46, 42, 42).Contains(mouse.ToPoint())) {
                     Main.LocalPlayer.mouseInterface = true;
-        
+
                     bool mouseClick = Main.mouseLeft && Main.mouseLeftRelease;
                     string hoverText = "";
                     switch (i) {
                         case 0:
                             hoverText = "Save Current Selection";
-                            
+
                             if (mouseClick && CaptureInterface.EdgeAPinned && CaptureInterface.EdgeBPinned) {
                                 SoundEngine.PlaySound(SoundID.MenuTick);
-                                
-                                Task.Factory.StartNew(() => {
+
+                                Task.Factory.StartNew(
+                                        () => {
                                             string fileName = "BinarySchematica"; //TODO: SchematicaWindowState.Instance.ToggleSaveNamePopup();
-                                            
+
                                             //Removing from Accordion since it'll be unavailable until it finished exporting
                                             SchematicaWindowState.Instance.WindowElement.TryRemoveAccordionItem(fileName);
-                                            Schematica.CanRefreshSchematicasList = false;
-                                            
+                                            CanRefreshSchematicasList = false;
+
                                             SchematicaFileFormat.ExportSchematica(fileName, CaptureInterface.EdgeA, CaptureInterface.EdgeB);
                                         }
                                     )
-                                        .ContinueWith(
-                                            _ => {
-                                                Console.WriteLine("Finished Exporting");
-                                                
-                                                Schematica.CanRefreshSchematicasList = true;
-                                                SchematicaWindowState.Instance.WindowElement.RepopulateSchematicas();
-                                            }
-                                        );
+                                    .ContinueWith(
+                                        _ => {
+                                            Console.WriteLine("Finished Exporting");
+
+                                            CanRefreshSchematicasList = true;
+                                            SchematicaWindowState.Instance.WindowElement.RepopulateSchematicas();
+                                        }
+                                    );
                             }
                             break;
                         case 1:
                             hoverText = "Load Schematics";
-        
+
                             if (mouseClick) {
                                 SoundEngine.PlaySound(SoundID.MenuTick);
                                 selected[i] = !selected[i];
-                                
-                                if (Schematica.CanRefreshSchematicasList)
+
+                                if (CanRefreshSchematicasList)
                                     SchematicaWindowState.Instance.WindowElement.RepopulateSchematicas();
 
                                 if (selected[i])
@@ -133,26 +134,26 @@ public class Schematica : Mod
                             break;
                         case 2:
                             hoverText = "Schematic Preview: " + (selected[i] ? "Enabled" : "Disabled");
-                            
+
                             if (mouseClick) {
                                 SoundEngine.PlaySound(SoundID.MenuTick);
                                 selected[i] = !selected[i];
                             }
                             break;
                     }
-        
+
                     Main.instance.MouseText(hoverText, 0, 0);
-        
+
                     return true;
                 }
             }
-        
+
             return false;
         };
 
         //Remove "Camera Mode" text
         IL.Terraria.Graphics.Capture.CaptureInterface.Draw += il => {
-            var c = new ILCursor(il);
+            ILCursor c = new ILCursor(il);
 
             if (!c.TryGotoNext(i => i.MatchLdcI4(81)))
                 return;
@@ -161,13 +162,13 @@ public class Schematica : Mod
             c.RemoveRange(18);
         };
 
-        
+
         //Condition whether edges can be selected or not
         On.Terraria.Graphics.Capture.CaptureInterface.ModeEdgeSelection.Update += (orig, self) => {
             if (CanSelectEdges)
                 orig.Invoke(self);
         };
-        
+
         On.Terraria.Graphics.Capture.CaptureInterface.ModeDragBounds.Update += (orig, self) => {
             if (CanSelectEdges)
                 orig.Invoke(self);
@@ -219,9 +220,7 @@ public class Schematica : Mod
 public class KeyBindPlayer : ModPlayer
 {
     public override void ProcessTriggers(TriggersSet triggersSet) {
-        if (Schematica.UITestBind.JustPressed) {
-            SchematicaWindowState.Instance.WindowElement.RepopulateSchematicas();
-        }
+        if (Schematica.UITestBind.JustPressed) { SchematicaWindowState.Instance.WindowElement.RepopulateSchematicas(); }
 
         if (Schematica.TestSetEdges.JustPressed) {
             CaptureInterface.EdgeA = Point.Zero;

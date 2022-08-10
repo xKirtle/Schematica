@@ -8,7 +8,7 @@ public class TileData
     public WallTypeData WallTypeData { get; }
     public LiquidData LiquidData { get; }
     public TileWallWireStateData TileWallWireStateData { get; }
-    
+
     public TileData(Tile tile) {
         TileTypeData = tile.Get<TileTypeData>();
         WallTypeData = tile.Get<WallTypeData>();

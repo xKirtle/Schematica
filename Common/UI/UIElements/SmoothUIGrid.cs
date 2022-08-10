@@ -10,7 +10,7 @@ public class SmoothUIGrid : UIGrid
 {
     private float oldScrollViewPos;
     private float scrollAmount;
-    
+
     public override void ScrollWheel(UIScrollWheelEvent evt) {
         if (_scrollbar != null) {
             oldScrollViewPos = _scrollbar.ViewPosition;
@@ -21,13 +21,11 @@ public class SmoothUIGrid : UIGrid
 
     public override void Update(GameTime gameTime) {
         base.Update(gameTime);
-        
+
         if (Main.mouseLeft) {
             scrollAmount = (_scrollbar.ViewPosition - oldScrollViewPos) * 3f;
             oldScrollViewPos = _scrollbar.ViewPosition;
         }
-        else {
-            _scrollbar.ViewPosition = MathHelper.Lerp(_scrollbar.ViewPosition, oldScrollViewPos + scrollAmount, 0.1f);
-        }
+        else { _scrollbar.ViewPosition = MathHelper.Lerp(_scrollbar.ViewPosition, oldScrollViewPos + scrollAmount, 0.1f); }
     }
 }

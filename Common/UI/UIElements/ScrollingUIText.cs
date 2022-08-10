@@ -18,37 +18,37 @@ public class ScrollingUIText : UIText
     private bool scrollingLeft;
     private int scrollTimer = 0;
     private int cooldownTimer = 0;
-    
+
     public override void Update(GameTime gameTime) {
         base.Update(gameTime);
         //Parent is the dummy UIElement we use to hide the text behind a certain width
 
         if (cooldownTimer > 0 && !scrollingLeft)
             isScrolling = false;
-        
+
         canScroll = isScrolling && cooldownTimer <= 0;
 
         if (IsMouseHovering || Parent.IsMouseHovering) {
             isScrolling = true;
             canScroll = false;
-            return;   
+            return;
         }
 
         if (cooldownTimer > 0) {
             cooldownTimer--;
             return;
         }
-        
+
         Rectangle cullingArea = GetViewCullingArea();
-        Vector2 offset = new Vector2(10f);
-        if ((!scrollingLeft && Parent.ContainsPoint(new Vector2(cullingArea.Right, cullingArea.Bottom) + offset)) || 
-            (scrollingLeft && Parent.ContainsPoint(new Vector2(cullingArea.Left, cullingArea.Bottom) - offset))) {
+        Vector2 offset = new(10f);
+        if (!scrollingLeft && Parent.ContainsPoint(new Vector2(cullingArea.Right, cullingArea.Bottom) + offset) ||
+            scrollingLeft && Parent.ContainsPoint(new Vector2(cullingArea.Left, cullingArea.Bottom) - offset)) {
             scrollingLeft = !scrollingLeft;
             cooldownTimer = 90;
-            
+
             return;
         }
-        
+
         if (canScroll)
             Left.Set(Left.Pixels + 1f * scrollingLeft.ToDirectionInt(), 0f);
     }

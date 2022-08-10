@@ -34,33 +34,33 @@ public static class SchematicaFileFormat
 
     public static void ExportSchematica(string fileName, Point edgeA, Point edgeB) {
         Stopwatch sw = Stopwatch.StartNew();
-        
-        if (String.IsNullOrEmpty(fileName))
+
+        if (string.IsNullOrEmpty(fileName))
             throw new ArgumentNullException("Cannot save schematica with an invalid name");
 
-        Point size = new Point(Math.Abs(edgeA.X - edgeB.X) + 1, Math.Abs(edgeA.Y - edgeB.Y) + 1);
+        Point size = new(Math.Abs(edgeA.X - edgeB.X) + 1, Math.Abs(edgeA.Y - edgeB.Y) + 1);
 
         if (size == Point.Zero) //Save Button does not allow 
             throw new ArgumentException("Size of schematica cannot be zero");
 
-        Point minEdge = new Point(Math.Min(edgeA.X, edgeB.X), Math.Min(edgeA.Y, edgeB.Y));
+        Point minEdge = new(Math.Min(edgeA.X, edgeB.X), Math.Min(edgeA.Y, edgeB.Y));
 
         try {
             //Making sure Schematica's path exists
             Directory.CreateDirectory(Schematica.SavePath);
 
             string writePath = $@"{Schematica.SavePath}\{fileName}.schematica";
-            using var outputStream = new ZipOutputStream(File.Create(writePath), Schematica.BufferSize);
+            using ZipOutputStream outputStream = new ZipOutputStream(File.Create(writePath), Schematica.BufferSize);
             outputStream.SetLevel(Schematica.CompressionLevel);
 
-            ZipEntry schematicaMetadataZipEntry = new ZipEntry("metadata.dat");
+            ZipEntry schematicaMetadataZipEntry = new("metadata.dat");
             schematicaMetadataZipEntry.DateTime = DateTime.Now;
             outputStream.PutNextEntry(schematicaMetadataZipEntry);
 
-            BinaryWriter zipWriter = new BinaryWriter(outputStream);
-            using var memoryStream = new MemoryStream(Schematica.BufferSize);
-            BinaryWriter memoryWriter = new BinaryWriter(memoryStream);
-            
+            BinaryWriter zipWriter = new(outputStream);
+            using MemoryStream memoryStream = new MemoryStream(Schematica.BufferSize);
+            BinaryWriter memoryWriter = new(memoryStream);
+
             //Header
             memoryWriter.Write("SCHEMATICA");
 
@@ -75,10 +75,10 @@ public static class SchematicaFileFormat
             memoryWriter.Flush(); //Ensures writer's data is flushed to its underlying stream (memoryStream)
             WriteMemoryToDisk(memoryStream, outputStream);
 
-            ZipEntry schematicaDataZipEntry = new ZipEntry("data.dat");
+            ZipEntry schematicaDataZipEntry = new("data.dat");
             schematicaDataZipEntry.DateTime = DateTime.Now;
             outputStream.PutNextEntry(schematicaDataZipEntry);
-            
+
             //TileData
             for (int j = 0; j < size.Y; j++) {
                 for (int i = 0; i < size.X; i++) {
@@ -89,7 +89,7 @@ public static class SchematicaFileFormat
                     // }
 
                     Tile tile = Main.tile[minEdge.X + i, minEdge.Y + j];
-                    CompactTileData compactTileData = new CompactTileData(tile);
+                    CompactTileData compactTileData = new(tile);
                     compactTileData.Serialize(memoryWriter);
                 }
             }
@@ -98,10 +98,10 @@ public static class SchematicaFileFormat
             memoryWriter.Flush(); //Ensures writer's data is flushed to its underlying stream (memoryStream)
             WriteMemoryToDisk(memoryStream, outputStream);
 
-            ZipEntry finalizingEntry = new ZipEntry("validation.dat");
+            ZipEntry finalizingEntry = new("validation.dat");
             finalizingEntry.DateTime = DateTime.Now;
             outputStream.PutNextEntry(finalizingEntry);
-            
+
             memoryWriter.Write(true);
             memoryWriter.Flush(); //Ensures writer's data is flushed to its underlying stream (memoryStream)
             WriteMemoryToDisk(memoryStream, outputStream);
@@ -130,10 +130,10 @@ public static class SchematicaFileFormat
     }
 
     public static SchematicaData ImportSchematica(string fileName, bool onlyMetadata = false) {
-        if (String.IsNullOrEmpty(fileName))
+        if (string.IsNullOrEmpty(fileName))
             throw new ArgumentNullException("Cannot import schematica with an invalid name");
 
-        SchematicaData schematica = new SchematicaData();
+        SchematicaData schematica = new();
         schematica.Name = fileName;
 
         try {
@@ -141,19 +141,19 @@ public static class SchematicaFileFormat
             string readPath = $@"{Schematica.SavePath}\{fileName}.schematica";
 
             //This is done when fetching valid schematicas already?
-            using (var zipFile = new ZipFile(File.OpenRead(readPath))) {
+            using (ZipFile zipFile = new ZipFile(File.OpenRead(readPath))) {
                 if (zipFile.FindEntry("validation.dat", false) == -1)
                     throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
             }
-            
-            using var inputStream = new ZipInputStream(File.OpenRead(readPath));
+
+            using ZipInputStream inputStream = new ZipInputStream(File.OpenRead(readPath));
             inputStream.GetNextEntry(); //metadata.dat
             inputStream.CopyTo(memoryStream);
-            
+
             //Setting back memoryStream to the start (gets left at the end with CopyTo)
             memoryStream.Position = 0;
 
-            BinaryReader reader = new BinaryReader(memoryStream);
+            BinaryReader reader = new(memoryStream);
 
             //Check header to determine if it's a valid file (or just renamed to .schematica)
             if (reader.ReadString() != "SCHEMATICA")
@@ -174,11 +174,11 @@ public static class SchematicaFileFormat
                 memoryStream.Position = 0;
 
                 while (memoryStream.Position < memoryStream.Length) {
-                    CompactTileData compactTileData = new CompactTileData();
+                    CompactTileData compactTileData = new();
                     compactTileData.Deserialize(reader);
                     schematica.TileDataList.Add(compactTileData.ToTileData());
                 }
-                
+
                 if (schematica.TileDataList.Count != schematica.Size.X * schematica.Size.Y)
                     throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
             }
@@ -204,23 +204,23 @@ public static class SchematicaFileFormat
 
         //flush diskOutput?
     }
-    
+
     public static List<string> GetValidSchematicas() {
-        List<string> list = new List<string>();
-        
+        List<string> list = new();
+
         //Create directory at mod startup if it doesn't exist?
         if (!Directory.Exists(Schematica.SavePath))
             return list;
-        
+
         foreach (string file in Directory.GetFiles(Schematica.SavePath)) {
             string fileName = Path.GetFileNameWithoutExtension(file);
-            
+
             if (list.Contains(fileName))
                 continue;
 
             try {
                 //If file is not valid, skip
-                using (var zipFile = new ZipFile(File.OpenRead(file))) {
+                using (ZipFile zipFile = new ZipFile(File.OpenRead(file))) {
                     if (zipFile.Count != 3 ||
                         zipFile.FindEntry("metadata.dat", false) == -1 ||
                         zipFile.FindEntry("data.dat", false) == -1 ||
@@ -228,14 +228,14 @@ public static class SchematicaFileFormat
                         continue;
                 }
 
-                using (var inputStream = new ZipInputStream(File.OpenRead(file))) {
-                    using var memoryStream = new MemoryStream();
+                using (ZipInputStream inputStream = new ZipInputStream(File.OpenRead(file))) {
+                    using MemoryStream memoryStream = new MemoryStream();
                     inputStream.GetNextEntry();
                     inputStream.CopyTo(memoryStream);
 
                     //Setting back memoryStream to the start (gets left at the end with CopyTo)
                     memoryStream.Position = 0;
-                    BinaryReader reader = new BinaryReader(memoryStream);
+                    BinaryReader reader = new(memoryStream);
 
                     if (reader.ReadString() != "SCHEMATICA")
                         continue;
@@ -252,7 +252,7 @@ public static class SchematicaFileFormat
 #endif
             }
         }
-        
+
         return list;
     }
 }

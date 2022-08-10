@@ -18,7 +18,7 @@ public class UIAccordion : UIElement
     public List<UIAccordionItem> accordianItems;
     public SmoothUIGrid Items;
     public UIScrollbar scrollbar;
-    
+
     public UIAccordionItem SelectedItem { get; private set; }
     public int ItemHeight { get; private set; }
 
@@ -38,26 +38,26 @@ public class UIAccordion : UIElement
             Left = new StyleDimension(-20f, 1f),
             Top = new StyleDimension(5f, 0f)
         };
-        
+
         Items.SetScrollbar(scrollbar);
 
         Append(Items);
         Append(scrollbar);
     }
-    
+
     public void UpdateItems(List<UIAccordionItem> list) {
         Clear();
 
         accordianItems.AddRange(list);
         Items.AddRange(list);
         Items.UpdateOrder();
-        
+
         //Bind events
         foreach (UIAccordionItem accordianItem in accordianItems) {
             accordianItem.HeaderOnClick += (__, _) => {
                 if (SelectedItem != accordianItem)
                     SelectedItem?.ToggleOpen();
-                
+
                 accordianItem.ToggleOpen();
                 SelectedItem = accordianItem.IsOpen ? accordianItem : null;
             };

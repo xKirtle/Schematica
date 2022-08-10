@@ -15,8 +15,8 @@ namespace Schematica.Common.UI.UIElements;
 
 public abstract class UIAccordionItem : UIElement
 {
-    public UIElement.MouseEvent HeaderOnClick;
-    
+    public MouseEvent HeaderOnClick;
+
     public string Title { get; private set; }
     public bool IsOpen { get; private set; }
     protected UIElement Header { get; private set; }
@@ -30,21 +30,21 @@ public abstract class UIAccordionItem : UIElement
 
     public UIAccordionItem(string title, int headerHeight, int bodyHeight) {
         Title = title;
-        
+
         GenerateHeader(headerHeight);
         GenerateBody(bodyHeight);
 
         Width.Set(0f, 1f);
         Height.Set(Header.Height.Pixels + (IsOpen ? innerBody.Height.Pixels : 0), 0f);
-        
+
         Append(innerBody);
         Append(Header);
 
         OverflowHidden = true;
-        
-        Header.OnClick += ((evt, element) => {
+
+        Header.OnClick += (evt, element) => {
             HeaderOnClick(evt, element);
-        });
+        };
     }
 
     private void GenerateHeader(int headerHeight) {
@@ -53,26 +53,26 @@ public abstract class UIAccordionItem : UIElement
             Height = new StyleDimension(headerHeight, 0f)
         };
 
-        UIPanel panel = new UIPanel() {
+        UIPanel panel = new() {
             Width = StyleDimension.Fill,
             Height = StyleDimension.Fill,
             BackgroundColor = new Color(35, 40, 83),
-            BorderColor = new Color(35, 40, 83),
+            BorderColor = new Color(35, 40, 83)
         };
         panel.SetPadding(0);
 
-        UIElement uiTextDrawBounds = new UIElement() {
+        UIElement uiTextDrawBounds = new() {
             Width = new StyleDimension(-5f * 2 - 32f - 0f, 1f),
             Height = StyleDimension.Fill,
             OverflowHidden = true
         };
-        
+
         panel.Append(uiTextDrawBounds);
-        
+
         title = new ScrollingUIText(Title) {
             VAlign = 0.5f,
             HAlign = 0f,
-            Left = new StyleDimension(10f, 0f),
+            Left = new StyleDimension(10f, 0f)
         };
 
         uiTextDrawBounds.Append(title);
@@ -87,7 +87,7 @@ public abstract class UIAccordionItem : UIElement
         };
 
         panel.Append(arrow);
-        
+
         //Bind Events
         Header.OnMouseOver += (__, _) => {
             panel.BackgroundColor = new Color(50, 58, 115);
@@ -101,13 +101,13 @@ public abstract class UIAccordionItem : UIElement
         targetHeight = Header.Height.Pixels;
         Header.Append(panel);
     }
-    
+
     private void GenerateBody(int bodyHeight) {
         innerBody = new UIElement() {
             Width = StyleDimension.Fill,
-            Height = new StyleDimension(Header.Height.Pixels + bodyHeight, 0f),
+            Height = new StyleDimension(Header.Height.Pixels + bodyHeight, 0f)
         };
-        
+
         Body = new UIPanel() {
             Width = StyleDimension.Fill,
             Height = StyleDimension.Fill,
@@ -134,9 +134,9 @@ public abstract class UIAccordionItem : UIElement
     }
 
     public override int CompareTo(object obj) {
-        string x = this.Title;
+        string x = Title;
         string y = (obj as UIAccordionItem)?.Title;
-        
+
         if (x == null && y == null)
             return 0;
         if (x == null)

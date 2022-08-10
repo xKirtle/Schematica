@@ -15,7 +15,7 @@ public abstract class UISystem<T> : ModSystem where T : UIState, new()
 
     public UserInterface userInterface;
     public T uiState;
-    public virtual VanillaInterfaceLayerID VanillaInterfaceLayer { get; protected set; } = Enums.VanillaInterfaceLayerID.Ruler;
+    public virtual VanillaInterfaceLayerID VanillaInterfaceLayer { get; protected set; } = VanillaInterfaceLayerID.Ruler;
     public virtual string InterfaceLayerName { get; protected set; } = typeof(T).Name;
     public virtual InterfaceScaleType InterfaceScaleType { get; protected set; } = InterfaceScaleType.None;
 
@@ -23,7 +23,7 @@ public abstract class UISystem<T> : ModSystem where T : UIState, new()
 
     public override void Load() {
         Instance = this;
-        
+
         userInterface = new UserInterface();
         uiState = new T();
         userInterface.SetState(uiState);
