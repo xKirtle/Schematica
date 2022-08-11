@@ -170,6 +170,11 @@ public static class SchematicaFileFormat
                 inputStream.GetNextEntry(); //data.dat
 
                 inputStream.CopyTo(memoryStream);
+                
+                //Checking if total bytes are the expected amount
+                if (inputStream.Position != (schematica.Size.X * schematica.Size.Y * TileDataByteSize))
+                    throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
+                
                 memoryStream.Position = 0;
 
                 while (memoryStream.Position < memoryStream.Length) {
@@ -177,9 +182,6 @@ public static class SchematicaFileFormat
                     tileData.Deserialize(reader);
                     schematica.TileDataList.Add(tileData);
                 }
-
-                if (schematica.TileDataList.Count != schematica.Size.X * schematica.Size.Y)
-                    throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
             }
 
             Console.WriteLine($"{fileName} {sw.ElapsedMilliseconds}");
