@@ -52,12 +52,9 @@ public class SchematicaWindowState : UIState
 public class SearchSchematicaWindow : DraggableUIPanel
 {
     private UIAccordion accordion;
-    private CancellationTokenSource cancellationTokenSource;
     private Task importSchematica;
 
     public override void OnInitialize() {
-        cancellationTokenSource = new CancellationTokenSource();
-
         Width.Set(300f, 0f);
         Height.Set(500f, 0f);
         Left.Set(24f, 0f);
@@ -132,7 +129,7 @@ public class SearchSchematicaWindow : DraggableUIPanel
         List<string> validSchematicaNames = SchematicaFileFormat.GetValidSchematicas();
         List<UIAccordionItem> accordionItems = new(validSchematicaNames.Count);
 
-        for (int i = 0; i < validSchematicaNames.Count; i++) { accordionItems.Add(new SchematicaPreviewUIElement(validSchematicaNames[i], accordion.ItemHeight, 308)); }
+        for (int i = 0; i < validSchematicaNames.Count; i++) { accordionItems.Add(new SchematicaAccordionItem(validSchematicaNames[i], accordion.ItemHeight, 308)); }
 
         accordion.UpdateItems(accordionItems);
     }

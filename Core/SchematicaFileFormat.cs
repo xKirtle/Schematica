@@ -25,10 +25,7 @@ public static class SchematicaFileFormat
      * Second .dat file in zip
      * Schematica Data      -> Read bytes until end of file
      *
-     * Third .jpg file in zip
-     * (Not implemented) Schematica Thumbnail Preview
-     * 
-     * Fourth file in zip
+     * Third file in zip
      * Valid export flag    -> 1 bit (bool) that checks if export code reached the end
      */
 
@@ -79,6 +76,7 @@ public static class SchematicaFileFormat
             schematicaDataZipEntry.DateTime = DateTime.Now;
             outputStream.PutNextEntry(schematicaDataZipEntry);
 
+            List<TileData> list = new List<TileData>();
             //TileData
             for (int j = 0; j < size.Y; j++) {
                 for (int i = 0; i < size.X; i++) {
@@ -89,7 +87,10 @@ public static class SchematicaFileFormat
                     // }
 
                     Tile tile = Main.tile[minEdge.X + i, minEdge.Y + j];
-                    CompactTileData compactTileData = new(tile);
+                    TileData tileData = new TileData(tile);
+                    list.Add(tileData);
+                    // CompactTileData compactTileData = new(tile);
+                    CompactTileData compactTileData = new CompactTileData(tileData);
                     compactTileData.Serialize(memoryWriter);
                 }
             }
