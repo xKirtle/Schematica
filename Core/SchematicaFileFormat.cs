@@ -75,8 +75,7 @@ public static class SchematicaFileFormat
             ZipEntry schematicaDataZipEntry = new("data.dat");
             schematicaDataZipEntry.DateTime = DateTime.Now;
             outputStream.PutNextEntry(schematicaDataZipEntry);
-
-            List<TileData> list = new List<TileData>();
+            
             //TileData
             for (int j = 0; j < size.Y; j++) {
                 for (int i = 0; i < size.X; i++) {
@@ -88,10 +87,7 @@ public static class SchematicaFileFormat
 
                     Tile tile = Main.tile[minEdge.X + i, minEdge.Y + j];
                     TileData tileData = new TileData(tile);
-                    list.Add(tileData);
-                    // CompactTileData compactTileData = new(tile);
-                    CompactTileData compactTileData = new CompactTileData(tileData);
-                    compactTileData.Serialize(memoryWriter);
+                    tileData.Serialize(memoryWriter);
                 }
             }
 
@@ -131,6 +127,8 @@ public static class SchematicaFileFormat
     }
 
     public static SchematicaData ImportSchematica(string fileName, bool onlyMetadata = false) {
+        Stopwatch sw = Stopwatch.StartNew();
+        
         if (string.IsNullOrEmpty(fileName))
             throw new ArgumentNullException("Cannot import schematica with an invalid name");
 
@@ -175,15 +173,17 @@ public static class SchematicaFileFormat
                 memoryStream.Position = 0;
 
                 while (memoryStream.Position < memoryStream.Length) {
-                    CompactTileData compactTileData = new();
-                    compactTileData.Deserialize(reader);
-                    schematica.TileDataList.Add(compactTileData.ToTileData());
+                    TileData tileData = new TileData();
+                    tileData.Deserialize(reader);
+                    schematica.TileDataList.Add(tileData);
                 }
 
                 if (schematica.TileDataList.Count != schematica.Size.X * schematica.Size.Y)
                     throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
             }
 
+            Console.WriteLine($"{fileName} {sw.ElapsedMilliseconds}");
+            
             return schematica;
         }
         catch (Exception e) {

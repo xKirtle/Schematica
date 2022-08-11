@@ -31,11 +31,11 @@ public class Schematica : Mod
     public static string SavePath = $@"{Path.Combine(Main.SavePath)}\{nameof(Schematica)}";
 
     //With an i7-10700k and an ssd m.2. samsung 970 evo:
-    //Taking at max 500MB to save a Large world
-    //at compression level 9 -> Large world was +- 7000KB and took 33s to save
-    //at compression level 1 -> Large world was +- 12000KB and took 4.4s to save
-    //Small world takes 1.3s to import
-    //Large world takes 7.7s to import (kinda bad)
+    
+    //at compression level 9 -> Large world was +- 7000KB
+    //at compression level 1 -> Large world was +- 12000KB
+    //Large world takes 3.3s and 500MB to export
+    //Large world takes 1.7s and 500MB to import
 
     internal static int BufferSize = 4096 * 37; //.NET's default buffer is 4KB, I'm using around 150KB
     internal static int CompressionLevel = 1; //[0, 9] Bigger level => smaller files. May take longer to load/save schematicas

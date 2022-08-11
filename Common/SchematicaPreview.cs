@@ -23,10 +23,10 @@ public static class SchematicaPreview
                 TileData tileData = schematica.TileDataList[listIndex];
 
                 //Tiles
-                if (tileData.TileWallWireStateData.HasTile) {
-                    Main.instance.LoadTiles(tileData.TileTypeData.Type);
-                    Texture2D texture = TextureAssets.Tile[tileData.TileTypeData.Type].Value;
-                    Rectangle? rectangle = new Rectangle(tileData.TileWallWireStateData.TileFrameX, tileData.TileWallWireStateData.TileFrameY, 16, 16);
+                if (tileData.HasTile) {
+                    Main.instance.LoadTiles(tileData.TileType);
+                    Texture2D texture = TextureAssets.Tile[tileData.TileType].Value;
+                    Rectangle? rectangle = new Rectangle(tileData.TileFrameX, tileData.TileFrameY, 16, 16);
                     Main.spriteBatch.Draw(texture, (startingPostion + pos) * scale, rectangle, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
                 }
             }
