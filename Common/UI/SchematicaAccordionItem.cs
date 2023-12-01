@@ -65,7 +65,7 @@ public class SchematicaAccordionItem : UIAccordionItem
 
         Body.Append(importButton);
 
-        importButton.OnClick += ImportButtonOnClick;
+        importButton.OnLeftClick += ImportButtonOnClick;
     }
     private void ImportButtonOnClick(UIMouseEvent evt, UIElement button) {
         Console.WriteLine("Import and Place logic happens here");
@@ -84,8 +84,6 @@ public class SchematicaAccordionItem : UIAccordionItem
     private void SetThumbnailScale() {
         int desiredWidth = 100 * 16;
         int desiredHeight = 100 * 16;
-
-        Console.WriteLine(desiredHeight);
 
         int actualWidth = Schematica.Size.X * 16;
         int actualHeight = Schematica.Size.Y * 16;
@@ -111,8 +109,9 @@ public class SchematicaAccordionItem : UIAccordionItem
         //
         // offset = new Vector2(1764, 8341);
 
-        Console.WriteLine(offset);
-        Console.WriteLine(scale);
+        Console.WriteLine($"desired height: {desiredHeight}");
+        Console.WriteLine($"offset: {offset}");
+        Console.WriteLine($"scale: {scale}");
         thumbnail.SetSchematica(Schematica, offset, scale);
     }
 }

@@ -42,7 +42,7 @@ public abstract class UIAccordionItem : UIElement
 
         OverflowHidden = true;
 
-        Header.OnClick += (evt, element) => {
+        Header.OnLeftClick += (evt, element) => {
             HeaderOnClick(evt, element);
         };
     }
@@ -131,6 +131,7 @@ public abstract class UIAccordionItem : UIElement
         base.Update(gameTime);
 
         Height.Set(MathHelper.Lerp(Height.Pixels, targetHeight, 0.2f), 0f);
+        Recalculate();
     }
 
     public override int CompareTo(object obj) {

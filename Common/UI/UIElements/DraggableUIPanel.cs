@@ -14,15 +14,15 @@ public class DraggableUIPanel : UIPanel
     private bool dragging;
     public bool canDrag;
 
-    public override void MouseDown(UIMouseEvent evt) {
-        base.MouseDown(evt);
+    public override void LeftMouseDown(UIMouseEvent evt) {
+        base.LeftMouseDown(evt);
         dragging = true;
         if (canDrag)
             offset = new Vector2(evt.MousePosition.X - Left.Pixels, evt.MousePosition.Y - Top.Pixels);
     }
 
-    public override void MouseUp(UIMouseEvent evt) {
-        base.MouseUp(evt);
+    public override void LeftMouseUp(UIMouseEvent evt) {
+        base.LeftMouseUp(evt);
         Vector2 end = evt.MousePosition;
         dragging = false;
 

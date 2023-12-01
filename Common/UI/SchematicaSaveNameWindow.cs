@@ -40,7 +40,7 @@ public class SchematicaSaveNameWindow : UIPanel
             VAlign = 0.9f
         };
 
-        confirmButton.OnClick += (__, _) => {
+        confirmButton.OnLeftClick += (__, _) => {
             // ThreadPool.QueueUserWorkItem(state => SchematicaData.SaveSchematic(textBox.Text));
         };
 
@@ -53,7 +53,7 @@ public class SchematicaSaveNameWindow : UIPanel
             VAlign = 0.9f
         };
 
-        cancelButton.OnClick += (__, _) => {
+        cancelButton.OnLeftClick += (__, _) => {
             textBox.SetText("");
             ToggleVisibility();
         };

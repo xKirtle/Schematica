@@ -16,16 +16,16 @@ public static class SchematicaFileFormat
     internal static int TileDataByteSize => 14;
 
     /*
-     * First .dat file in zip
+     * First .dat file in zip (metadata.dat)
      * Header               -> 10 bytes that spell out 'SCHEMATICA' in ASCII characters
      * Version              -> String that holds mod version it was made with
      * Schematica Size      -> 2 ushort values (x and y)
      * (Not implemented)    -> List of mods enabled? (warn when they don't match, schematic might be wrong)
      *
-     * Second .dat file in zip
+     * Second .dat file in zip (data.dat)
      * Schematica Data      -> Read bytes until end of file
      *
-     * Third file in zip
+     * Third file in zip (validation.dat)
      * Valid export flag    -> 1 bit (bool) that checks if export code reached the end
      */
 
@@ -46,7 +46,7 @@ public static class SchematicaFileFormat
             //Making sure Schematica's path exists
             Directory.CreateDirectory(Schematica.SavePath);
 
-            string writePath = $@"{Schematica.SavePath}\{fileName}.schematica";
+            string writePath = Path.Combine(Schematica.SavePath, $"{fileName}.schematica");
             using ZipOutputStream outputStream = new ZipOutputStream(File.Create(writePath), Schematica.BufferSize);
             outputStream.SetLevel(Schematica.CompressionLevel);
 
@@ -103,7 +103,7 @@ public static class SchematicaFileFormat
             memoryWriter.Flush(); //Ensures writer's data is flushed to its underlying stream (memoryStream)
             WriteMemoryToDisk(memoryStream, outputStream);
 
-            Console.WriteLine($"{fileName} {sw.ElapsedMilliseconds}");
+            Console.WriteLine($"Finished exporting {fileName} in {sw.ElapsedMilliseconds}ms");
         }
         catch (Exception e) {
 #if !DEBUG
@@ -137,14 +137,14 @@ public static class SchematicaFileFormat
 
         try {
             Stream memoryStream = new MemoryStream(Schematica.BufferSize);
-            string readPath = $@"{Schematica.SavePath}\{fileName}.schematica";
+            string readPath = Path.Combine(Schematica.SavePath, $"{fileName}.schematica");
 
             //This is done when fetching valid schematicas already?
             using (ZipFile zipFile = new ZipFile(File.OpenRead(readPath))) {
                 if (zipFile.FindEntry("validation.dat", false) == -1)
                     throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
             }
-
+            
             using ZipInputStream inputStream = new ZipInputStream(File.OpenRead(readPath));
             inputStream.GetNextEntry(); //metadata.dat
             inputStream.CopyTo(memoryStream);
@@ -167,12 +167,14 @@ public static class SchematicaFileFormat
             if (!onlyMetadata) {
                 schematica.TileDataList = new List<TileData>();
                 memoryStream.SetLength(0);
+                
                 inputStream.GetNextEntry(); //data.dat
-
+                int totalDataBytesRead = CopyStream(inputStream, memoryStream);
                 inputStream.CopyTo(memoryStream);
                 
                 //Checking if total bytes are the expected amount
-                if (inputStream.Position != (schematica.Size.X * schematica.Size.Y * TileDataByteSize))
+                int expectedDataBytesRead = schematica.Size.X * schematica.Size.Y * TileDataByteSize;
+                if (totalDataBytesRead != expectedDataBytesRead)
                     throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
                 
                 memoryStream.Position = 0;
@@ -184,7 +186,7 @@ public static class SchematicaFileFormat
                 }
             }
 
-            Console.WriteLine($"{fileName} {sw.ElapsedMilliseconds}");
+            Console.WriteLine($"Finished importing {fileName} in {sw.ElapsedMilliseconds}ms");
             
             return schematica;
         }
@@ -257,5 +259,18 @@ public static class SchematicaFileFormat
         }
 
         return list;
+    }
+    
+    private static int CopyStream(Stream input, Stream output) {
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        int totalBytesRead = 0;
+
+        while ((bytesRead = input.Read(buffer, 0, buffer.Length)) > 0) {
+            output.Write(buffer, 0, bytesRead);
+            totalBytesRead += bytesRead;
+        }
+
+        return totalBytesRead;
     }
 }

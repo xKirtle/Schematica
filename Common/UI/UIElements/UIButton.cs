@@ -30,11 +30,11 @@ public class UIButton : UIPanel
             BackgroundColor = new Color(63, 82, 151) * 0.7f;
         };
 
-        OnMouseDown += (__, _) => {
+        OnLeftMouseDown += (__, _) => {
             Top.Set(Top.Pixels + 1f, 0f);
         };
 
-        OnMouseUp += (__, _) => {
+        OnLeftMouseUp += (__, _) => {
             Top.Set(Top.Pixels - 1f, 0f);
         };
     }

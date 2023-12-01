@@ -28,7 +28,7 @@ namespace Schematica;
 
 public class Schematica : Mod
 {
-    public static string SavePath = $@"{Path.Combine(Main.SavePath)}\{nameof(Schematica)}";
+    public static string SavePath = Path.Combine(Main.SavePath, nameof(Schematica));
 
     //With an i7-10700k and an ssd m.2. samsung 970 evo:
     
@@ -58,7 +58,7 @@ public class Schematica : Mod
 
         //TODO: No need to detour this.. Make my own UI and check if cross needs to be shown if Edges aren't pinned
 
-        On.Terraria.Graphics.Capture.CaptureInterface.DrawButtons += (orig, self, sb) => {
+        Terraria.Graphics.Capture.On_CaptureInterface.DrawButtons += (orig, self, sb) => {
             for (int i = 0; i < selected.Length; i++) {
                 Texture2D background = !selected[i] ? TextureAssets.InventoryBack.Value : TextureAssets.InventoryBack14.Value;
                 float scale = 0.8f;
@@ -76,8 +76,8 @@ public class Schematica : Mod
 
             orig.Invoke(self, sb);
         };
-
-        On.Terraria.Graphics.Capture.CaptureInterface.UpdateButtons += (orig, self, mouse) => {
+        
+        Terraria.Graphics.Capture.On_CaptureInterface.UpdateButtons += (orig, self, mouse) => {
             bool baseReturn = orig.Invoke(self, mouse);
             if (baseReturn)
                 return true;
@@ -151,30 +151,30 @@ public class Schematica : Mod
             return false;
         };
 
-        //Remove "Camera Mode" text
-        IL.Terraria.Graphics.Capture.CaptureInterface.Draw += il => {
-            ILCursor c = new ILCursor(il);
-
-            if (!c.TryGotoNext(i => i.MatchLdcI4(81)))
-                return;
-
-            c.Index -= 2;
-            c.RemoveRange(18);
-        };
+        // Remove "Camera Mode" text
+         Terraria.Graphics.Capture.IL_CaptureInterface.Draw += il => {
+             ILCursor c = new ILCursor(il);
+        
+             if (!c.TryGotoNext(i => i.MatchLdcI4(81)))
+                 return;
+        
+             c.Index -= 2;
+             c.RemoveRange(18);
+         };
 
 
         //Condition whether edges can be selected or not
-        On.Terraria.Graphics.Capture.CaptureInterface.ModeEdgeSelection.Update += (orig, self) => {
+        Terraria.Graphics.Capture.On_CaptureInterface.ModeEdgeSelection.Update += (orig, self) => {
             if (CanSelectEdges)
                 orig.Invoke(self);
         };
 
-        On.Terraria.Graphics.Capture.CaptureInterface.ModeDragBounds.Update += (orig, self) => {
+        Terraria.Graphics.Capture.On_CaptureInterface.ModeDragBounds.Update += (orig, self) => {
             if (CanSelectEdges)
                 orig.Invoke(self);
         };
 
-        On.Terraria.Graphics.Capture.CaptureInterface.Scrolling += (orig, self) => {
+        Terraria.Graphics.Capture.On_CaptureInterface.Scrolling += (orig, self) => {
             if (CanSelectEdges)
                 orig.Invoke(self);
         };
