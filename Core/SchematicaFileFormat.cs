@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.Xna.Framework;
 using Schematica.Common.DataStructures;
@@ -20,7 +21,6 @@ public static class SchematicaFileFormat
      * Header               -> 10 bytes that spell out 'SCHEMATICA' in ASCII characters
      * Version              -> String that holds mod version it was made with
      * Schematica Size      -> 2 ushort values (x and y)
-     * (Not implemented)    -> List of mods enabled? (warn when they don't match, schematic might be wrong)
      *
      * Second .dat file in zip (data.dat)
      * Schematica Data      -> Read bytes until end of file
@@ -165,66 +165,19 @@ public static class SchematicaFileFormat
         schematica.Name = fileName;
 
         try {
-            // TODO: Order of validation is a bit of a mess
-            // First, we should check the header to see if it's a valid file (metadata.dat)
-            // Then, we should check if the schematic is valid (validation.dat)
-            // Finally, we should check if the dependencies are met (dependencies.dat)
-            
             Stream memoryStream = new MemoryStream(Schematica.BufferSize);
             string readPath = Path.Combine(Schematica.SavePath, $"{fileName}.schematica");
-
-            //This is done when fetching valid schematicas already?
-            using (ZipFile zipFile = new ZipFile(File.OpenRead(readPath))) {
-                if (zipFile.FindEntry("validation.dat", false) == -1)
-                    throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
-                
-                // TODO: Should also check if dependencies are met before importing schematica data (data.dat)
-            }
+            using var zipFile = new ZipFile(File.OpenRead(readPath));
             
-            using ZipInputStream inputStream = new ZipInputStream(File.OpenRead(readPath));
-            inputStream.GetNextEntry(); //metadata.dat
-            inputStream.CopyTo(memoryStream);
-
-            //Setting back memoryStream to the start (gets left at the end with CopyTo)
-            memoryStream.Position = 0;
-
-            BinaryReader reader = new(memoryStream);
-
-            //Check header to determine if it's a valid file (or just renamed to .schematica)
-            if (reader.ReadString() != "SCHEMATICA")
-                throw new FileLoadException("Cannot import non schematica files");
-
-            //Mod Version -> In case I ever need versioning for backwards compatibility..
-            string schematicaModVersion = reader.ReadString();
-
-            //Schematica Size
-            schematica.Size = new Point(reader.ReadInt32(), reader.ReadInt32());
-
+            ValidateAndParseMetadata(zipFile, schematica);
+            ValidateSchematicaIntegrity(zipFile);
+            ValidateSchematicaDependencies(zipFile);
+            
             if (!onlyMetadata) {
-                schematica.TileDataList = new List<TileData>();
-                memoryStream.SetLength(0);
-                
-                inputStream.GetNextEntry(); //data.dat
-                int totalDataBytesRead = CopyStream(inputStream, memoryStream);
-                inputStream.CopyTo(memoryStream);
-                
-                //Checking if total bytes are the expected amount
-                int expectedDataBytesRead = schematica.Size.X * schematica.Size.Y * TileDataByteSize;
-                if (totalDataBytesRead != expectedDataBytesRead)
-                    throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
-                
-                memoryStream.Position = 0;
-
-                while (memoryStream.Position < memoryStream.Length) {
-                    TileData tileData = new TileData();
-                    tileData.Deserialize(reader);
-                    schematica.TileDataList.Add(tileData);
-                }
+                ValidateAndParseSchematicaData(zipFile, schematica);
             }
 
             Console.WriteLine($"Finished importing {fileName} in {sw.ElapsedMilliseconds}ms");
-            
-            return schematica;
         }
         catch (Exception e) {
 #if !DEBUG
@@ -232,9 +185,11 @@ public static class SchematicaFileFormat
 #else
             Console.WriteLine(e);
 #endif
+
+            return null;
         }
 
-        return null;
+        return schematica;
     }
 
     private static void WriteMemoryToDisk(MemoryStream memoryStream, Stream diskOutputStream) {
@@ -262,9 +217,10 @@ public static class SchematicaFileFormat
             try {
                 //If file is not valid, skip
                 using (ZipFile zipFile = new ZipFile(File.OpenRead(file))) {
-                    if (zipFile.Count != 3 ||
+                    if (zipFile.Count != 4 ||
                         zipFile.FindEntry("metadata.dat", false) == -1 ||
                         zipFile.FindEntry("data.dat", false) == -1 ||
+                        zipFile.FindEntry("dependencies.dat", false) == -1 ||
                         zipFile.FindEntry("validation.dat", false) == -1)
                         continue;
                 }
@@ -296,17 +252,75 @@ public static class SchematicaFileFormat
 
         return list;
     }
+
+    private static void ValidateAndParseMetadata(ZipFile zipFile, SchematicaData schematica) {
+        var metadataEntry = zipFile.GetEntry("metadata.dat");
+        if (metadataEntry == null)
+            throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
+            
+        using var metadataStream = zipFile.GetInputStream(metadataEntry);
+        using var reader = new BinaryReader(metadataStream);
+            
+        // Check header to determine if it's a valid file (or just renamed to .schematica)
+        if (reader.ReadString() != "SCHEMATICA")
+            throw new FileLoadException("Invalid header in metadata file");
+
+        // Mod Version -> In case I ever need versioning for backwards compatibility..
+        string schematicaModVersion = reader.ReadString();
+                        
+        //Schematica Size
+        schematica.Size = new Point(reader.ReadInt32(), reader.ReadInt32());
+    }
+
+    private static void ValidateSchematicaIntegrity(ZipFile zipFile) {
+        if (zipFile.FindEntry("validation.dat", false) == -1)
+            throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
+    }
     
-    private static int CopyStream(Stream input, Stream output) {
-        byte[] buffer = new byte[8192];
-        int bytesRead;
-        int totalBytesRead = 0;
+    private static void ValidateSchematicaDependencies(ZipFile zipFile) {
+        var dependenciesEntry = zipFile.GetEntry("dependencies.dat");
+        if (dependenciesEntry == null)
+            throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
+        
+        var enabledMods = ModLoader.Mods.Select(mod => $"{mod.Name}@{mod.Version}").ToList();
+        
+        using var metadataStream = zipFile.GetInputStream(dependenciesEntry);
+        using var reader = new BinaryReader(metadataStream);
+        
+        int modDependencyCount = reader.ReadInt32();
 
-        while ((bytesRead = input.Read(buffer, 0, buffer.Length)) > 0) {
-            output.Write(buffer, 0, bytesRead);
-            totalBytesRead += bytesRead;
+        for (int i = 0; i < modDependencyCount; i++) {
+            var modDependency = reader.ReadString();
+            if (!enabledMods.Contains(modDependency))
+                throw new FileLoadException($"Cannot import schematica because it requires {modDependency}");
         }
+    }
 
-        return totalBytesRead;
+    private static void ValidateAndParseSchematicaData(ZipFile zipFile, SchematicaData schematicaData) {
+        var dataEntry = zipFile.GetEntry("data.dat");
+        if (dataEntry == null)
+            throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
+        
+        schematicaData.TileDataList = new List<TileData>();
+        
+        using var dataStream = zipFile.GetInputStream(dataEntry);
+        using var reader = new BinaryReader(dataStream);
+        
+        int expectedDataBytesRead = schematicaData.Size.X * schematicaData.Size.Y * TileDataByteSize;
+        
+        if (dataEntry.Size != expectedDataBytesRead)
+            throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
+        
+        try {
+            int actualDataBytesRead = 0;
+            while (actualDataBytesRead < expectedDataBytesRead) {
+                TileData tileData = new TileData();
+                tileData.Deserialize(reader);
+                schematicaData.TileDataList.Add(tileData);
+                actualDataBytesRead += TileDataByteSize;
+            }
+        } catch (EndOfStreamException) {
+            throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
+        }
     }
 }

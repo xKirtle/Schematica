@@ -2,3 +2,18 @@ Keybinds: {
 	Empty.DisplayName: Empty
 	Edges.DisplayName: Edges
 }
+
+Configs: {
+	SchematicaConfig: {
+		DisplayName: Schematica Config
+
+		AllowOlderSchematicas: {
+			Label: Allow Older Schematicas
+			Tooltip:
+				'''
+				Allow importing Schematicas that contain tiles that belong to older mod versions.
+				This can cause imported schematicas to not be exactly the same as what they were when exported if a mod removed or changed a tile in between versions.
+				'''
+		}
+	}
+}
