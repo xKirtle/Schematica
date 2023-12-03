@@ -215,7 +215,7 @@ public static class SchematicaFileFormat
         memoryWriter.Flush();
 
         // Writing memoryStream to ouput zip stream and flushing any pendant operations
-        memoryStream.WriteTo(memoryStream);
+        memoryStream.WriteTo(entryStream);
         // Reseting memoryStream without abusing memory
         memoryStream.SetLength(0);
     }
