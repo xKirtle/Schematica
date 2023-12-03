@@ -121,9 +121,11 @@ public class SearchSchematicaWindow : DraggableUIPanel
             Schematica.CanSelectEdges = false;
             Main.LocalPlayer.mouseInterface = true;
         }
+        
+        accordion.RecalculateChildren();
     }
 
-    public void TryRemoveAccordionItem(string title) => accordion.accordianItems.Find(x => x.Title == title)?.Remove();
+    public void TryRemoveAccordionItem(string title) => accordion.accordionItems.Find(x => x.Title == title)?.Remove();
 
     public void RepopulateSchematicas() {
         List<string> validSchematicaNames = SchematicaFileFormat.GetValidSchematicas();

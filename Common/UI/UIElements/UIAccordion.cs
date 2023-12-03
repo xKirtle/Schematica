@@ -15,7 +15,7 @@ namespace Schematica.Common.UI.UIElements;
 //WARNING: The UIGrid has no limit of items.. could affect performance if thousands of entries?
 public class UIAccordion : UIElement
 {
-    public List<UIAccordionItem> accordianItems;
+    public List<UIAccordionItem> accordionItems;
     public SmoothUIGrid Items;
     public UIScrollbar scrollbar;
 
@@ -24,7 +24,7 @@ public class UIAccordion : UIElement
 
     public UIAccordion(int itemHeight) {
         ItemHeight = itemHeight;
-        accordianItems = new List<UIAccordionItem>();
+        accordionItems = new List<UIAccordionItem>();
 
         Items = new SmoothUIGrid() {
             Width = new StyleDimension(-20f - 3f, 1f),
@@ -48,12 +48,12 @@ public class UIAccordion : UIElement
     public void UpdateItems(List<UIAccordionItem> list) {
         Clear();
 
-        accordianItems.AddRange(list);
+        accordionItems.AddRange(list);
         Items.AddRange(list);
         Items.UpdateOrder();
 
         //Bind events
-        foreach (UIAccordionItem accordianItem in accordianItems) {
+        foreach (UIAccordionItem accordianItem in accordionItems) {
             accordianItem.HeaderOnClick += (__, _) => {
                 if (SelectedItem != accordianItem)
                     SelectedItem?.ToggleOpen();
@@ -64,8 +64,16 @@ public class UIAccordion : UIElement
         }
     }
 
+    public override void Update(GameTime gameTime) {
+        base.Update(gameTime);
+
+        foreach (var accordionItem in accordionItems) {
+            accordionItem.Update(gameTime);
+        }
+    }
+
     public void Clear() {
-        accordianItems.Clear();
+        accordionItems.Clear();
         Items.Clear();
     }
 }
