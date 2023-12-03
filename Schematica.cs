@@ -44,7 +44,6 @@ public class Schematica : Mod
 
     internal static bool CanSelectEdges = true;
     internal static bool CanRefreshSchematicasList = true;
-    internal static bool IsExportingSchematica = false;
 
     internal static ModKeybind UITestBind;
     internal static ModKeybind TestSetEdges;
@@ -105,18 +104,10 @@ public class Schematica : Mod
                                             //Removing from Accordion since it'll be unavailable until it finished exporting
                                             SchematicaWindowState.Instance.WindowElement.TryRemoveAccordionItem(fileName);
                                             CanRefreshSchematicasList = false;
-                                            IsExportingSchematica = true;
-                                            
-                                            On_CaptureInterface.EndCamera += orig => {
-                                                orig.Invoke();
-
-                                                if (IsExportingSchematica) {
-                                                    SchematicaFileFormat.ExportSchematica(fileName, CaptureInterface.EdgeA, CaptureInterface.EdgeB);
-                                                    IsExportingSchematica = false;
-                                                }
-                                            };
                                             
                                             TakeSchematicaSnapshot(fileName);
+                                            while (CaptureInterface.CameraLock) Task.Delay(50).Wait();
+                                            SchematicaFileFormat.ExportSchematica(fileName, CaptureInterface.EdgeA, CaptureInterface.EdgeB);
                                         }
                                     )
                                     .ContinueWith(
@@ -136,7 +127,7 @@ public class Schematica : Mod
                                 SoundEngine.PlaySound(SoundID.MenuTick);
                                 selected[i] = !selected[i];
 
-                                if (CanRefreshSchematicasList && !IsExportingSchematica)
+                                if (CanRefreshSchematicasList)
                                     SchematicaWindowState.Instance.WindowElement.RepopulateSchematicas();
 
                                 if (selected[i])

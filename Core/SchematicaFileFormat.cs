@@ -106,6 +106,10 @@ public static class SchematicaFileFormat
                 memoryWriter.Write(true);
             });
             
+            string renderedPreviewPath = Path.Combine(Main.SavePath, "Captures", $"{fileName}.png");
+            zipArchive.CreateEntryFromFile(renderedPreviewPath, "preview.png");
+            File.Delete(renderedPreviewPath);
+            
             Console.WriteLine($"Finished exporting {fileName} in {sw.ElapsedMilliseconds}ms");
         }
         catch (Exception e) {
@@ -175,11 +179,12 @@ public static class SchematicaFileFormat
                 using var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Read);
                 
                 // If file is not valid, skip
-                if (zipArchive.Entries.Count != 4 ||
+                if (zipArchive.Entries.Count != 5 ||
                     zipArchive.GetEntry("metadata.dat") == null ||
                     zipArchive.GetEntry("data.dat") == null ||
                     zipArchive.GetEntry("dependencies.dat") == null ||
-                    zipArchive.GetEntry("validation.dat") == null)
+                    zipArchive.GetEntry("validation.dat") == null ||
+                    zipArchive.GetEntry("preview.png") == null)
                     continue;
 
                 var metadataEntry = zipArchive.GetEntry("metadata.dat");
