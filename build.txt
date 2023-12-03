@@ -2,4 +2,3 @@ displayName = Schematica
 author = Kirtle
 version = 0.1
 side = NoSync
-dllReferences = ICSharpCode.SharpZipLib

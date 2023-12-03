@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
-using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.Xna.Framework;
 using Schematica.Common.DataStructures;
 using Schematica.Common.UI;
@@ -36,9 +36,9 @@ public static class SchematicaFileFormat
 
     // TODO: Schematic Preview image can be captured using Terraria's screenshot tool! (and maybe compressed or scaled down)
     // and saved as a png file in the zip file (or as a byte array in another .dat file)
-    
+
     public static void ExportSchematica(string fileName, Point edgeA, Point edgeB) {
-        Stopwatch sw = Stopwatch.StartNew();
+        var sw = Stopwatch.StartNew();
 
         if (string.IsNullOrEmpty(fileName))
             throw new ArgumentNullException("Cannot save schematica with an invalid name");
@@ -53,96 +53,63 @@ public static class SchematicaFileFormat
         try {
             // Making sure Schematica's path exists
             Directory.CreateDirectory(Schematica.SavePath);
-
+            
             string writePath = Path.Combine(Schematica.SavePath, $"{fileName}.schematica");
-            using ZipOutputStream outputStream = new ZipOutputStream(File.Create(writePath), Schematica.BufferSize);
-            outputStream.SetLevel(Schematica.CompressionLevel);
-
-            ZipEntry schematicaMetadataZipEntry = new("metadata.dat");
-            schematicaMetadataZipEntry.DateTime = DateTime.Now;
-            outputStream.PutNextEntry(schematicaMetadataZipEntry);
-
-            BinaryWriter zipWriter = new(outputStream);
-            using MemoryStream memoryStream = new MemoryStream(Schematica.BufferSize);
-            BinaryWriter memoryWriter = new(memoryStream);
-
-            // Header
-            memoryWriter.Write("SCHEMATICA");
-
-            // Mod Version
-            memoryWriter.Write(ModContent.GetInstance<Schematica>().Version.ToString());
-
-            // Schematica Size
-            memoryWriter.Write(size.X);
-            memoryWriter.Write(size.Y);
-
-            // Writing initial info to disk
-            memoryWriter.Flush(); //Ensures writer's data is flushed to its underlying stream (memoryStream)
-            WriteMemoryToDisk(memoryStream, outputStream);
-
-            ZipEntry schematicaDataZipEntry = new("data.dat");
-            schematicaDataZipEntry.DateTime = DateTime.Now;
-            outputStream.PutNextEntry(schematicaDataZipEntry);
+            using var fileStream = new FileStream(writePath, FileMode.Create);
+            using var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Create);
+            using var memoryStream = new MemoryStream(Schematica.BufferSize);
+            var memoryWriter = new BinaryWriter(memoryStream);
             
+            // Metadata
+            WriteEntryToArchive(zipArchive, "metadata.dat", memoryStream, memoryWriter, () => {
+                // Header
+                memoryWriter.Write("SCHEMATICA");
+
+                // Mod Version
+                memoryWriter.Write(ModContent.GetInstance<Schematica>().Version.ToString());
+
+                // Schematica Size
+                memoryWriter.Write(size.X);
+                memoryWriter.Write(size.Y);
+            });
+            
+            // Data entry
             var modDependencies = new HashSet<string>();
-            
-            // TileData
-            for (int j = 0; j < size.Y; j++) {
-                for (int i = 0; i < size.X; i++) {
-                    // It's actually slower to do that many write calls. Memory reduction gain from this is negligible
-                    // if (memoryStream.Length + TileDataByteSize > memoryStream.Capacity) {
-                    //     memoryWriter.Flush(); //Ensures writer's data is flushed to its underlying stream (memoryStream)
-                    //     WriteMemoryToDisk(memoryStream, outputStream);
-                    // }
-                    
-                    Tile tile = Main.tile[minEdge.X + i, minEdge.Y + j];
-                    var modTile = TileLoader.GetTile(tile.TileType);
+            WriteEntryToArchive(zipArchive, "data.dat", memoryStream, memoryWriter, () => {
+                // TileData
+                for (int j = 0; j < size.Y; j++) {
+                    for (int i = 0; i < size.X; i++) {
+                        Tile tile = Main.tile[minEdge.X + i, minEdge.Y + j];
+                        var modTile = TileLoader.GetTile(tile.TileType);
+                        
+                        if (modTile != null) {
+                            string schematicDependency = $"{modTile.Mod.Name}@{modTile.Mod.Version}";
+                            modDependencies.Add(schematicDependency);
+                        }
 
-                    if (modTile != null) {
-                        string schematicDependency = $"{modTile.Mod.Name}@{modTile.Mod.Version}";
-                        modDependencies.Add(schematicDependency);
-                    } 
-                    
-                    TileData tileData = new TileData(tile);
-                    tileData.Serialize(memoryWriter);
+                        TileData tileData = new TileData(tile);
+                        tileData.Serialize(memoryWriter);
+                    }
                 }
-            }
-
-            // Saving remaining info in buffer that didn't trigger write above
-            memoryWriter.Flush(); // Ensures writer's data is flushed to its underlying stream (memoryStream)
-            WriteMemoryToDisk(memoryStream, outputStream);
+            });
             
-            // Mod Dependencies
-            ZipEntry schematicaDependenciesZipEntry = new("dependencies.dat");
-            schematicaDependenciesZipEntry.DateTime = DateTime.Now;
-            outputStream.PutNextEntry(schematicaDependenciesZipEntry);
+            // Dependencies entry
+            WriteEntryToArchive(zipArchive, "dependencies.dat", memoryStream, memoryWriter, () => {
+                memoryWriter.Write(modDependencies.Count);
+                foreach (string modDependency in modDependencies) {
+                    memoryWriter.Write(modDependency);
+                }
+            });
             
-            memoryWriter.Write(modDependencies.Count);
-            foreach (string modDependency in modDependencies) {
-                memoryWriter.Write(modDependency);
-            }
+            // Validation entry
+            WriteEntryToArchive(zipArchive, "validation.dat", memoryStream, memoryWriter, () => {
+                memoryWriter.Write(true);
+            });
             
-            memoryWriter.Flush(); // Ensures writer's data is flushed to its underlying stream (memoryStream)
-            WriteMemoryToDisk(memoryStream, outputStream);
-
-            ZipEntry finalizingEntry = new("validation.dat");
-            finalizingEntry.DateTime = DateTime.Now;
-            outputStream.PutNextEntry(finalizingEntry);
-            
-            // TODO: Retrieve Capture Screen and add it to the zip file
-            
-            memoryWriter.Write(true);
-            memoryWriter.Flush(); // Ensures writer's data is flushed to its underlying stream (memoryStream)
-            WriteMemoryToDisk(memoryStream, outputStream);
-
             Console.WriteLine($"Finished exporting {fileName} in {sw.ElapsedMilliseconds}ms");
         }
         catch (Exception e) {
-#if !DEBUG
-            ModContent.GetInstance<Schematica>().Logger.Warn(e);
-#else
             Console.WriteLine(e);
-#endif
         }
     }
 
@@ -159,49 +126,35 @@ public static class SchematicaFileFormat
     }
 
     public static SchematicaData ImportSchematica(string fileName, bool onlyMetadata = false) {
-        Stopwatch sw = Stopwatch.StartNew();
+        var sw = Stopwatch.StartNew();
         
         if (string.IsNullOrEmpty(fileName))
-            throw new ArgumentNullException("Cannot import schematica with an invalid name");
+            throw new ArgumentNullException(nameof(fileName), "Cannot import schematica with an invalid name");
 
-        SchematicaData schematica = new();
+        var schematica = new SchematicaData();
         schematica.Name = fileName;
 
         try {
-            Stream memoryStream = new MemoryStream(Schematica.BufferSize);
             string readPath = Path.Combine(Schematica.SavePath, $"{fileName}.schematica");
-            using var zipFile = new ZipFile(File.OpenRead(readPath));
-            
-            ValidateAndParseMetadata(zipFile, schematica);
-            ValidateSchematicaIntegrity(zipFile);
-            ValidateSchematicaDependencies(zipFile);
+            using var fileStream = new FileStream(readPath, FileMode.Open);
+            using var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Read);
+
+            ValidateAndParseMetadata(zipArchive, schematica);
+            ValidateSchematicaIntegrity(zipArchive);
+            ValidateSchematicaDependencies(zipArchive);
             
             if (!onlyMetadata) {
-                ValidateAndParseSchematicaData(zipFile, schematica);
+                ValidateAndParseSchematicaData(zipArchive, schematica);
             }
-
+            
             Console.WriteLine($"Finished importing {fileName} in {sw.ElapsedMilliseconds}ms");
         }
         catch (Exception e) {
-#if !DEBUG
-            ModContent.GetInstance<Schematica>().Logger.Warn(e);
-#else
             Console.WriteLine(e);
-#endif
-
             return null;
         }
 
         return schematica;
-    }
-
-    private static void WriteMemoryToDisk(MemoryStream memoryStream, Stream diskOutputStream) {
-        // Writing memoryStream to ouput zip stream and flushing any pendent operations
-        memoryStream.WriteTo(diskOutputStream);
-        // Reseting memoryStream without abusing memory
-        memoryStream.SetLength(0);
-
-        // flush diskOutput?
     }
 
     public static List<string> GetValidSchematicas() {
@@ -218,50 +171,61 @@ public static class SchematicaFileFormat
                 continue;
 
             try {
+                using var fileStream = File.OpenRead(file);
+                using var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Read);
+                
                 // If file is not valid, skip
-                using (ZipFile zipFile = new ZipFile(File.OpenRead(file))) {
-                    if (zipFile.Count != 4 ||
-                        zipFile.FindEntry("metadata.dat", false) == -1 ||
-                        zipFile.FindEntry("data.dat", false) == -1 ||
-                        zipFile.FindEntry("dependencies.dat", false) == -1 ||
-                        zipFile.FindEntry("validation.dat", false) == -1)
-                        continue;
-                }
+                if (zipArchive.Entries.Count != 4 ||
+                    zipArchive.GetEntry("metadata.dat") == null ||
+                    zipArchive.GetEntry("data.dat") == null ||
+                    zipArchive.GetEntry("dependencies.dat") == null ||
+                    zipArchive.GetEntry("validation.dat") == null)
+                    continue;
 
-                using (ZipInputStream inputStream = new ZipInputStream(File.OpenRead(file))) {
-                    using MemoryStream memoryStream = new MemoryStream();
-                    inputStream.GetNextEntry();
-                    inputStream.CopyTo(memoryStream);
+                var metadataEntry = zipArchive.GetEntry("metadata.dat");
+                if (metadataEntry == null)
+                    continue;
 
-                    //Setting back memoryStream to the start (gets left at the end with CopyTo)
-                    memoryStream.Position = 0;
-                    BinaryReader reader = new(memoryStream);
+                using var metadataStream = metadataEntry.Open();
+                using var memoryStream = new MemoryStream();
+                metadataStream.CopyTo(memoryStream);
+                
+                //Setting back memoryStream to the start (gets left at the end with CopyTo)
+                memoryStream.Position = 0;
+                using var reader = new BinaryReader(memoryStream);
+                
+                if (reader.ReadString() != "SCHEMATICA")
+                    continue;
 
-                    if (reader.ReadString() != "SCHEMATICA")
-                        continue;
-
-                    list.Add(fileName);
-                }
+                list.Add(fileName);
             }
             catch (Exception e) {
                 // File could not be read because it was open elsewhere
-#if !DEBUG
-            ModContent.GetInstance<Schematica>().Logger.Warn(e);
-#else
                 Console.WriteLine(e);
-#endif
             }
         }
 
         return list;
     }
+    
+    private static void WriteEntryToArchive(ZipArchive archive, string entryName, MemoryStream memoryStream, BinaryWriter memoryWriter, Action writeAction) {
+        var zipEntry = archive.CreateEntry(entryName);
+        using var entryStream = zipEntry.Open();
+        writeAction();
+        memoryWriter.Flush();
 
-    private static void ValidateAndParseMetadata(ZipFile zipFile, SchematicaData schematica) {
-        var metadataEntry = zipFile.GetEntry("metadata.dat");
+        // Writing memoryStream to ouput zip stream and flushing any pendant operations
+        memoryStream.WriteTo(memoryStream);
+        // Reseting memoryStream without abusing memory
+        memoryStream.SetLength(0);
+    }
+
+    private static void ValidateAndParseMetadata(ZipArchive zipArchive, SchematicaData schematica) {
+        var metadataEntry = zipArchive.GetEntry("metadata.dat");
         if (metadataEntry == null)
             throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
-            
-        using var metadataStream = zipFile.GetInputStream(metadataEntry);
+
+        using var metadataStream = metadataEntry.Open();
         using var reader = new BinaryReader(metadataStream);
             
         // Check header to determine if it's a valid file (or just renamed to .schematica)
@@ -275,43 +239,48 @@ public static class SchematicaFileFormat
         schematica.Size = new Point(reader.ReadInt32(), reader.ReadInt32());
     }
 
-    private static void ValidateSchematicaIntegrity(ZipFile zipFile) {
-        if (zipFile.FindEntry("validation.dat", false) == -1)
+    private static void ValidateSchematicaIntegrity(ZipArchive zipArchive) {
+        if (zipArchive.GetEntry("validation.dat") == null)
             throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
     }
     
-    private static void ValidateSchematicaDependencies(ZipFile zipFile) {
-        var dependenciesEntry = zipFile.GetEntry("dependencies.dat");
+    private static void ValidateSchematicaDependencies(ZipArchive zipArchive) {
+        var dependenciesEntry = zipArchive.GetEntry("dependencies.dat");
         if (dependenciesEntry == null)
             throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
         
         var enabledMods = ModLoader.Mods.Select(mod => $"{mod.Name}@{mod.Version}").ToList();
         
-        using var metadataStream = zipFile.GetInputStream(dependenciesEntry);
+        using var metadataStream = dependenciesEntry.Open();
         using var reader = new BinaryReader(metadataStream);
         
         int modDependencyCount = reader.ReadInt32();
+        List<string> missingDependencies = new List<string>();
 
         for (int i = 0; i < modDependencyCount; i++) {
             var modDependency = reader.ReadString();
-            if (!enabledMods.Contains(modDependency))
-                throw new FileLoadException($"Cannot import schematica because it requires {modDependency}");
+            if (!enabledMods.Contains(modDependency)) {
+                missingDependencies.Add(modDependency);
+            }
         }
+
+        if (missingDependencies.Any())
+            throw new FileLoadException($"Cannot import schematica because it requires the following dependencies: {string.Join(", ", missingDependencies)}");
     }
 
-    private static void ValidateAndParseSchematicaData(ZipFile zipFile, SchematicaData schematicaData) {
-        var dataEntry = zipFile.GetEntry("data.dat");
+    private static void ValidateAndParseSchematicaData(ZipArchive zipArchive, SchematicaData schematicaData) {
+        var dataEntry = zipArchive.GetEntry("data.dat");
         if (dataEntry == null)
             throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
         
         schematicaData.TileDataList = new List<TileData>();
         
-        using var dataStream = zipFile.GetInputStream(dataEntry);
+        using var dataStream = dataEntry.Open();
         using var reader = new BinaryReader(dataStream);
         
         int expectedDataBytesRead = schematicaData.Size.X * schematicaData.Size.Y * TileDataByteSize;
         
-        if (dataEntry.Size != expectedDataBytesRead)
+        if (dataEntry.Length != expectedDataBytesRead)
             throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
         
         try {
