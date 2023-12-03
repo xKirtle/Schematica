@@ -19,6 +19,7 @@ using Schematica.Core;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
+using Terraria.GameContent.UI;
 using Terraria.GameContent.UI.Elements;
 using Terraria.GameInput;
 using Terraria.Graphics.Capture;
@@ -43,6 +44,7 @@ public class Schematica : Mod
 
     internal static bool CanSelectEdges = true;
     internal static bool CanRefreshSchematicasList = true;
+    internal static bool IsExportingSchematica = false;
 
     internal static ModKeybind UITestBind;
     internal static ModKeybind TestSetEdges;
@@ -103,8 +105,18 @@ public class Schematica : Mod
                                             //Removing from Accordion since it'll be unavailable until it finished exporting
                                             SchematicaWindowState.Instance.WindowElement.TryRemoveAccordionItem(fileName);
                                             CanRefreshSchematicasList = false;
+                                            IsExportingSchematica = true;
+                                            
+                                            On_CaptureInterface.EndCamera += orig => {
+                                                orig.Invoke();
 
-                                            SchematicaFileFormat.ExportSchematica(fileName, CaptureInterface.EdgeA, CaptureInterface.EdgeB);
+                                                if (IsExportingSchematica) {
+                                                    SchematicaFileFormat.ExportSchematica(fileName, CaptureInterface.EdgeA, CaptureInterface.EdgeB);
+                                                    IsExportingSchematica = false;
+                                                }
+                                            };
+                                            
+                                            TakeSchematicaSnapshot(fileName);
                                         }
                                     )
                                     .ContinueWith(
@@ -124,7 +136,7 @@ public class Schematica : Mod
                                 SoundEngine.PlaySound(SoundID.MenuTick);
                                 selected[i] = !selected[i];
 
-                                if (CanRefreshSchematicasList)
+                                if (CanRefreshSchematicasList && !IsExportingSchematica)
                                     SchematicaWindowState.Instance.WindowElement.RepopulateSchematicas();
 
                                 if (selected[i])
@@ -215,5 +227,30 @@ public class Schematica : Mod
         //     // //Emit brfalse to check if delegate is false, and if it is, skip to label which is the next instruction after return
         //     // c.Emit(OpCodes.Brfalse_S, modesUpdateLoopLabel);
         // };
+    }
+
+    public static void TakeSchematicaSnapshot(string fileName) {
+        Rectangle GetArea() {
+            int x = Math.Min(CaptureInterface.EdgeA.X, CaptureInterface.EdgeB.X);
+            int y = Math.Min(CaptureInterface.EdgeA.Y, CaptureInterface.EdgeB.Y);
+            int num = Math.Abs(CaptureInterface.EdgeA.X - CaptureInterface.EdgeB.X);
+            int num2 = Math.Abs(CaptureInterface.EdgeA.Y - CaptureInterface.EdgeB.Y);
+            return new Rectangle(x, y, num + 1, num2 + 1);
+        }
+
+        var captureSettings = new CaptureSettings {
+            Area = GetArea(),
+            Biome = CaptureBiome.GetCaptureBiome(CaptureInterface.Settings.BiomeChoiceIndex),
+            CaptureBackground = !CaptureInterface.Settings.TransparentBackground,
+            CaptureEntities = false,
+            UseScaling = CaptureInterface.Settings.PackImage,
+            CaptureMech = false,
+            OutputName = fileName
+        };
+                                            
+        if (captureSettings.Biome.WaterStyle != 13)
+            Main.liquidAlpha[13] = 0f;
+                                            
+        CaptureInterface.StartCamera(captureSettings);
     }
 }

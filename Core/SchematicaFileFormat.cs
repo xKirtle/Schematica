@@ -6,6 +6,7 @@ using System.Linq;
 using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.Xna.Framework;
 using Schematica.Common.DataStructures;
+using Schematica.Common.UI;
 using Terraria;
 using Terraria.Graphics.Capture;
 using Terraria.ModLoader;
@@ -44,13 +45,13 @@ public static class SchematicaFileFormat
 
         Point size = new(Math.Abs(edgeA.X - edgeB.X) + 1, Math.Abs(edgeA.Y - edgeB.Y) + 1);
 
-        if (size == Point.Zero) //Save Button does not allow 
+        if (size == Point.Zero) // Save Button does not allow 
             throw new ArgumentException("Size of schematica cannot be zero");
 
         Point minEdge = new(Math.Min(edgeA.X, edgeB.X), Math.Min(edgeA.Y, edgeB.Y));
 
         try {
-            //Making sure Schematica's path exists
+            // Making sure Schematica's path exists
             Directory.CreateDirectory(Schematica.SavePath);
 
             string writePath = Path.Combine(Schematica.SavePath, $"{fileName}.schematica");
@@ -65,17 +66,17 @@ public static class SchematicaFileFormat
             using MemoryStream memoryStream = new MemoryStream(Schematica.BufferSize);
             BinaryWriter memoryWriter = new(memoryStream);
 
-            //Header
+            // Header
             memoryWriter.Write("SCHEMATICA");
 
-            //Mod Version
+            // Mod Version
             memoryWriter.Write(ModContent.GetInstance<Schematica>().Version.ToString());
 
-            //Schematica Size
+            // Schematica Size
             memoryWriter.Write(size.X);
             memoryWriter.Write(size.Y);
 
-            //Writing initial info to disk
+            // Writing initial info to disk
             memoryWriter.Flush(); //Ensures writer's data is flushed to its underlying stream (memoryStream)
             WriteMemoryToDisk(memoryStream, outputStream);
 
@@ -83,12 +84,12 @@ public static class SchematicaFileFormat
             schematicaDataZipEntry.DateTime = DateTime.Now;
             outputStream.PutNextEntry(schematicaDataZipEntry);
             
-            //TileData
             var modDependencies = new HashSet<string>();
             
+            // TileData
             for (int j = 0; j < size.Y; j++) {
                 for (int i = 0; i < size.X; i++) {
-                    //It's actually slower to do that many write calls. Memory reduction gain from this is negligible
+                    // It's actually slower to do that many write calls. Memory reduction gain from this is negligible
                     // if (memoryStream.Length + TileDataByteSize > memoryStream.Capacity) {
                     //     memoryWriter.Flush(); //Ensures writer's data is flushed to its underlying stream (memoryStream)
                     //     WriteMemoryToDisk(memoryStream, outputStream);
@@ -107,11 +108,11 @@ public static class SchematicaFileFormat
                 }
             }
 
-            //Saving remaining info in buffer that didn't trigger write above
-            memoryWriter.Flush(); //Ensures writer's data is flushed to its underlying stream (memoryStream)
+            // Saving remaining info in buffer that didn't trigger write above
+            memoryWriter.Flush(); // Ensures writer's data is flushed to its underlying stream (memoryStream)
             WriteMemoryToDisk(memoryStream, outputStream);
             
-            //Mod Dependencies
+            // Mod Dependencies
             ZipEntry schematicaDependenciesZipEntry = new("dependencies.dat");
             schematicaDependenciesZipEntry.DateTime = DateTime.Now;
             outputStream.PutNextEntry(schematicaDependenciesZipEntry);
@@ -121,15 +122,17 @@ public static class SchematicaFileFormat
                 memoryWriter.Write(modDependency);
             }
             
-            memoryWriter.Flush(); //Ensures writer's data is flushed to its underlying stream (memoryStream)
+            memoryWriter.Flush(); // Ensures writer's data is flushed to its underlying stream (memoryStream)
             WriteMemoryToDisk(memoryStream, outputStream);
 
             ZipEntry finalizingEntry = new("validation.dat");
             finalizingEntry.DateTime = DateTime.Now;
             outputStream.PutNextEntry(finalizingEntry);
-
+            
+            // TODO: Retrieve Capture Screen and add it to the zip file
+            
             memoryWriter.Write(true);
-            memoryWriter.Flush(); //Ensures writer's data is flushed to its underlying stream (memoryStream)
+            memoryWriter.Flush(); // Ensures writer's data is flushed to its underlying stream (memoryStream)
             WriteMemoryToDisk(memoryStream, outputStream);
 
             Console.WriteLine($"Finished exporting {fileName} in {sw.ElapsedMilliseconds}ms");
@@ -193,18 +196,18 @@ public static class SchematicaFileFormat
     }
 
     private static void WriteMemoryToDisk(MemoryStream memoryStream, Stream diskOutputStream) {
-        //Writing memoryStream to ouput zip stream and flushing any pendent operations
+        // Writing memoryStream to ouput zip stream and flushing any pendent operations
         memoryStream.WriteTo(diskOutputStream);
-        //Reseting memoryStream without abusing memory
+        // Reseting memoryStream without abusing memory
         memoryStream.SetLength(0);
 
-        //flush diskOutput?
+        // flush diskOutput?
     }
 
     public static List<string> GetValidSchematicas() {
         List<string> list = new();
 
-        //Create directory at mod startup if it doesn't exist?
+        // Create directory at mod startup if it doesn't exist?
         if (!Directory.Exists(Schematica.SavePath))
             return list;
 
@@ -215,7 +218,7 @@ public static class SchematicaFileFormat
                 continue;
 
             try {
-                //If file is not valid, skip
+                // If file is not valid, skip
                 using (ZipFile zipFile = new ZipFile(File.OpenRead(file))) {
                     if (zipFile.Count != 4 ||
                         zipFile.FindEntry("metadata.dat", false) == -1 ||
@@ -241,7 +244,7 @@ public static class SchematicaFileFormat
                 }
             }
             catch (Exception e) {
-                //File could not be read because it was open elsewhere
+                // File could not be read because it was open elsewhere
 #if !DEBUG
             ModContent.GetInstance<Schematica>().Logger.Warn(e);
 #else
