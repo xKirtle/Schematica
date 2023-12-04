@@ -126,8 +126,8 @@ public class Schematica : Mod
                                 SoundEngine.PlaySound(SoundID.MenuTick);
                                 selected[i] = !selected[i];
 
-                                if (CanRefreshSchematicasList)
-                                    SchematicaWindowState.Instance.WindowElement.RepopulateSchematicas();
+                                // if (CanRefreshSchematicasList)
+                                //     SchematicaWindowState.Instance.WindowElement.RepopulateSchematicas();
 
                                 if (selected[i])
                                     SchematicaUISystem.Instance.Activate();

@@ -16,6 +16,7 @@ using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
 using Terraria.Graphics.Capture;
 using Terraria.Localization;
+using Terraria.ModLoader;
 using Terraria.UI;
 
 namespace Schematica.Common.UI;
@@ -62,8 +63,10 @@ public class SearchSchematicaWindow : DraggableUIPanel
     public override void OnInitialize() {
         Width.Set(600f, 0f);
         Height.Set(400f, 0f);
-        Left.Set(24f, 0f);
-        Top.Set(120f, 0f);
+        MarginLeft = 24f;
+        MarginTop = 120f;
+        // Left.Set(24f, 0f);
+        // Top.Set(120f, 0f);
         SetPadding(6f);
 
         canDrag = false;
@@ -74,8 +77,15 @@ public class SearchSchematicaWindow : DraggableUIPanel
         // };
         
         // Refresh button
-        var refreshButton = new UIImageButton(Main.Assets.Request<Texture2D>("Images/UI/SearchCancel")) {
-            MarginTop = 4f
+        var refreshButton = new UIColoredImageButton(ModContent.Request<Texture2D>("Schematica/Assets/UI/Refresh", AssetRequestMode.ImmediateLoad), true) {
+            MarginLeft = 4f,
+            MarginTop = 2f,
+            Width = new StyleDimension(26f, 0f),
+            Height = new StyleDimension(26f, 0f)
+        };
+
+        refreshButton.OnLeftClick += (evt, element) => {
+            RepopulateSchematicas();
         };
         
         Append(refreshButton);
@@ -115,9 +125,8 @@ public class SearchSchematicaWindow : DraggableUIPanel
     private void AddSearchBar(UIElement parent) {
         //WIP
         searchAreaPanel = new UIPanel() {
-            MarginLeft = 26f,
-            MarginRight = 26f,
-            Width = new StyleDimension(-52f, 1f),
+            MarginLeft = 36f,
+            Width = new StyleDimension(-24f - 36f, 1f),
             Height = new StyleDimension(32f, 0f),
             BackgroundColor = new Color(35, 40, 83),
             BorderColor = new Color(35, 40, 83)
@@ -175,9 +184,6 @@ public class SearchSchematicaWindow : DraggableUIPanel
         
         Width.Set(MathHelper.Lerp(Width.Pixels, targetWidth, 0.25f), 0f);
         Height.Set(MathHelper.Lerp(Height.Pixels, targetHeight, 0.25f), 0f);
-
-        // var searchAreaWidthPercentage = isExpanded ? 0.95f : 0.8f; 
-        // searchAreaPanel.Width.Set(0f, MathHelper.Lerp(searchAreaPanel.Width.Percent, searchAreaWidthPercentage, 0.2f));
         
         Recalculate();
     }
