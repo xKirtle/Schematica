@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
@@ -19,11 +20,12 @@ public class SchematicaAccordionItem : UIAccordionItem
 
     private UIPanel panel;
     private UISchematicaThumbnail thumbnail;
+    private UIImage previewImage;
     private UIText width;
     private UIText height;
     private CancellationTokenSource cancellationTokenSource;
 
-    public SchematicaAccordionItem(string title, int headerHeight, int bodyHeight) : base(title, headerHeight, bodyHeight) {
+    public SchematicaAccordionItem(SchematicaData schematicaData, int headerHeight, int bodyHeight) : base(schematicaData.DisplayName, headerHeight, bodyHeight) {
         cancellationTokenSource = new CancellationTokenSource();
         
         panel = new UIPanel() {
@@ -47,13 +49,21 @@ public class SchematicaAccordionItem : UIAccordionItem
         
         panel.Append(height);
 
-        thumbnail = new UISchematicaThumbnail() {
+        // thumbnail = new UISchematicaThumbnail() {
+        //     Width = StyleDimension.Fill,
+        //     Height = new StyleDimension(-35f, 1f),
+        //     Top = new StyleDimension(35f, 0)
+        // };
+
+        // panel.Append(thumbnail);
+        
+        previewImage = new UIImage(Asset<Texture2D>.Empty) {
             Width = StyleDimension.Fill,
-            Height = new StyleDimension(-35f, 1f),
+            Height = new StyleDimension(200f, 1f),
             Top = new StyleDimension(35f, 0)
         };
         
-        panel.Append(thumbnail);
+        panel.Append(previewImage);
 
         UIButton importButton = new("Import & Place Schematica") {
             Width = StyleDimension.Fill,
@@ -66,6 +76,7 @@ public class SchematicaAccordionItem : UIAccordionItem
         Body.Append(importButton);
 
         importButton.OnLeftClick += ImportButtonOnClick;
+        SetSchematica(schematicaData);
     }
     private void ImportButtonOnClick(UIMouseEvent evt, UIElement button) {
         Console.WriteLine("Import and Place logic happens here");
@@ -78,7 +89,23 @@ public class SchematicaAccordionItem : UIAccordionItem
         
         width.SetText($"Width: {Schematica.Size.X}");
         height.SetText($"Height: {Schematica.Size.Y}");
-        SetThumbnailScale();
+        // SetThumbnailScale();
+    }
+
+    public override void Update(GameTime gameTime) {
+        base.Update(gameTime);
+
+        if (Schematica != null && Schematica.ImagePreview == null &&Schematica.ImagePreviewData != null) {
+            using var memoryStream = new MemoryStream(Schematica.ImagePreviewData);
+            var texture = Texture2D.FromStream(Main.instance.GraphicsDevice, memoryStream);
+
+            if (texture != null) {
+                Schematica.ImagePreview = texture;
+                Schematica.ImagePreviewData = null; // Free up resources
+                previewImage.SetImage(Schematica.ImagePreview);
+                Console.WriteLine("ImagePreview set");
+            }
+        }
     }
 
     private void SetThumbnailScale() {

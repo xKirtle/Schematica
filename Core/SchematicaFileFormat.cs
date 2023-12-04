@@ -5,6 +5,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using ReLogic.Content;
 using Schematica.Common.DataStructures;
 using Schematica.Common.UI;
 using Terraria;
@@ -16,7 +18,7 @@ namespace Schematica.Core;
 public static class SchematicaFileFormat
 {
     internal static int TileDataByteSize => 14;
-
+    
     /*
      * First .dat file in zip (metadata.dat)
      * Header               -> 10 bytes that spell out 'SCHEMATICA' in ASCII characters
@@ -32,15 +34,15 @@ public static class SchematicaFileFormat
      * 
      * Fourth file in zip (validation.dat)
      * Valid export flag    -> 1 bit (bool) that checks if export code reached the end
+     *
+     * Fifth file in zip (preview.png)
+     * Preview image        -> PNG image of the schematic
      */
 
-    // TODO: Schematic Preview image can be captured using Terraria's screenshot tool! (and maybe compressed or scaled down)
-    // and saved as a png file in the zip file (or as a byte array in another .dat file)
-
-    public static void ExportSchematica(string fileName, Point edgeA, Point edgeB) {
+    public static void ExportSchematica(string displayName, Point edgeA, Point edgeB) {
         var sw = Stopwatch.StartNew();
 
-        if (string.IsNullOrEmpty(fileName))
+        if (string.IsNullOrEmpty(displayName))
             throw new ArgumentNullException("Cannot save schematica with an invalid name");
 
         Point size = new(Math.Abs(edgeA.X - edgeB.X) + 1, Math.Abs(edgeA.Y - edgeB.Y) + 1);
@@ -54,7 +56,7 @@ public static class SchematicaFileFormat
             // Making sure Schematica's path exists
             Directory.CreateDirectory(Schematica.SavePath);
             
-            string writePath = Path.Combine(Schematica.SavePath, $"{fileName}.schematica");
+            string writePath = Path.Combine(Schematica.SavePath, $"{ConvertToFileName(displayName)}.schematica");
             using var fileStream = new FileStream(writePath, FileMode.Create);
             using var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Create);
             using var memoryStream = new MemoryStream(Schematica.BufferSize);
@@ -106,11 +108,11 @@ public static class SchematicaFileFormat
                 memoryWriter.Write(true);
             });
             
-            string renderedPreviewPath = Path.Combine(Main.SavePath, "Captures", $"{fileName}.png");
+            string renderedPreviewPath = Path.Combine(Main.SavePath, "Captures", $"{displayName}.png");
             zipArchive.CreateEntryFromFile(renderedPreviewPath, "preview.png");
             File.Delete(renderedPreviewPath);
             
-            Console.WriteLine($"Finished exporting {fileName} in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"Finished exporting {displayName} in {sw.ElapsedMilliseconds}ms");
         }
         catch (Exception e) {
             Console.WriteLine(e);
@@ -129,29 +131,30 @@ public static class SchematicaFileFormat
         return true;
     }
 
-    public static SchematicaData ImportSchematica(string fileName, bool onlyMetadata = false) {
+    public static SchematicaData ImportSchematica(string displayName, bool onlyMetadata = false) {
         var sw = Stopwatch.StartNew();
         
-        if (string.IsNullOrEmpty(fileName))
-            throw new ArgumentNullException(nameof(fileName), "Cannot import schematica with an invalid name");
+        if (string.IsNullOrEmpty(displayName))
+            throw new ArgumentNullException(nameof(displayName), "Cannot import schematica with an invalid name");
 
         var schematica = new SchematicaData();
-        schematica.Name = fileName;
+        schematica.DisplayName = displayName;
 
         try {
-            string readPath = Path.Combine(Schematica.SavePath, $"{fileName}.schematica");
+            string readPath = Path.Combine(Schematica.SavePath, $"{ConvertToFileName(displayName)}.schematica");
             using var fileStream = new FileStream(readPath, FileMode.Open);
             using var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Read);
 
             ValidateAndParseMetadata(zipArchive, schematica);
             ValidateSchematicaIntegrity(zipArchive);
             ValidateSchematicaDependencies(zipArchive);
+            ValidateAndParseSchematicaPreview(zipArchive, schematica);
             
             if (!onlyMetadata) {
                 ValidateAndParseSchematicaData(zipArchive, schematica);
             }
             
-            Console.WriteLine($"Finished importing {fileName} in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"Finished importing {displayName} in {sw.ElapsedMilliseconds}ms");
         }
         catch (Exception e) {
             Console.WriteLine(e);
@@ -160,57 +163,27 @@ public static class SchematicaFileFormat
 
         return schematica;
     }
-
-    public static List<string> GetValidSchematicas() {
-        List<string> list = new();
+    
+    public static List<SchematicaData> GetValidAndUnloadedSchematicasMetadata() {
+        var schematicaList = new List<SchematicaData>();
+        var loadedSchematicaNames = new HashSet<string>(Schematica.LoadedSchematicas.Select(s => s.DisplayName));
 
         // Create directory at mod startup if it doesn't exist?
         if (!Directory.Exists(Schematica.SavePath))
-            return list;
+            return schematicaList;
 
-        foreach (string file in Directory.GetFiles(Schematica.SavePath)) {
-            string fileName = Path.GetFileNameWithoutExtension(file);
+        foreach (string file in Directory.GetFiles(Schematica.SavePath, "*.schematica")) {
+            string displayName = ConvertToDisplayName(Path.GetFileNameWithoutExtension(file));
 
-            if (list.Contains(fileName))
+            if (loadedSchematicaNames.Contains(displayName))
                 continue;
-
-            try {
-                using var fileStream = File.OpenRead(file);
-                using var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Read);
-                
-                // If file is not valid, skip
-                if (zipArchive.Entries.Count != 5 ||
-                    zipArchive.GetEntry("metadata.dat") == null ||
-                    zipArchive.GetEntry("data.dat") == null ||
-                    zipArchive.GetEntry("dependencies.dat") == null ||
-                    zipArchive.GetEntry("validation.dat") == null ||
-                    zipArchive.GetEntry("preview.png") == null)
-                    continue;
-
-                var metadataEntry = zipArchive.GetEntry("metadata.dat");
-                if (metadataEntry == null)
-                    continue;
-
-                using var metadataStream = metadataEntry.Open();
-                using var memoryStream = new MemoryStream();
-                metadataStream.CopyTo(memoryStream);
-                
-                //Setting back memoryStream to the start (gets left at the end with CopyTo)
-                memoryStream.Position = 0;
-                using var reader = new BinaryReader(memoryStream);
-                
-                if (reader.ReadString() != "SCHEMATICA")
-                    continue;
-
-                list.Add(fileName);
-            }
-            catch (Exception e) {
-                // File could not be read because it was open elsewhere
-                Console.WriteLine(e);
-            }
+            
+            var schematicaMetadata = ImportSchematica(displayName, onlyMetadata: true);
+            if (schematicaMetadata != null)
+                schematicaList.Add(schematicaMetadata);
         }
 
-        return list;
+        return schematicaList;
     }
     
     private static void WriteEntryToArchive(ZipArchive archive, string entryName, MemoryStream memoryStream, BinaryWriter memoryWriter, Action writeAction) {
@@ -300,4 +273,18 @@ public static class SchematicaFileFormat
             throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
         }
     }
+    
+    private static void ValidateAndParseSchematicaPreview(ZipArchive zipArchive, SchematicaData schematicaData) {
+        var previewEntry = zipArchive.GetEntry("preview.png");
+        if (previewEntry == null)
+            throw new FileLoadException("Cannot import corrupted or incomplete schematica files");
+        
+        using var previewStream = previewEntry.Open();
+        using var memoryStream = new MemoryStream();
+        previewStream.CopyTo(memoryStream);
+        schematicaData.ImagePreviewData = memoryStream.ToArray();
+    }
+    
+    private static string ConvertToFileName(string fileName) => fileName.Replace(" ", "_");
+    private static string ConvertToDisplayName(string fileName) => fileName.Replace("_", " ");
 }

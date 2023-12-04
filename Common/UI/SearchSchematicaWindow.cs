@@ -22,7 +22,7 @@ namespace Schematica.Common.UI;
 public class SchematicaUISystem : UISystem<SchematicaWindowState>
 {
     public override InterfaceScaleType InterfaceScaleType => InterfaceScaleType.UI;
-    public override VanillaInterfaceLayerID VanillaInterfaceLayer => VanillaInterfaceLayerID.Interface_Logic_1;
+    public override VanillaInterfaceLayerID VanillaInterfaceLayer => VanillaInterfaceLayerID.Capture_Manager_Check;
     //Not displaying above the map
 
     public override void Load() {
@@ -62,7 +62,7 @@ public class SearchSchematicaWindow : DraggableUIPanel
         SetPadding(6f);
 
         canDrag = false;
-        // OnMouseDown += (element, _) => {
+        // OnLeftMouseDown += (element, _) => {
         //     Vector2 MenuPosition = new Vector2(Left.Pixels, Top.Pixels);
         //     Vector2 clickPos = Vector2.Subtract(element.MousePosition, MenuPosition);
         //     canDrag = clickPos.Y <= 25;
@@ -128,41 +128,13 @@ public class SearchSchematicaWindow : DraggableUIPanel
     public void TryRemoveAccordionItem(string title) => accordion.accordionItems.Find(x => x.Title == title)?.Remove();
 
     public void RepopulateSchematicas() {
-        List<string> validSchematicaNames = SchematicaFileFormat.GetValidSchematicas();
-        List<UIAccordionItem> accordionItems = new(validSchematicaNames.Count);
-
-        for (int i = 0; i < validSchematicaNames.Count; i++) { accordionItems.Add(new SchematicaAccordionItem(validSchematicaNames[i], accordion.ItemHeight, 308)); }
+        var validSchematicas = SchematicaFileFormat.GetValidAndUnloadedSchematicasMetadata();
+        var accordionItems = new List<UIAccordionItem>(validSchematicas.Count);
+        
+        for (int i = 0; i < validSchematicas.Count; i++) {
+            accordionItems.Add(new SchematicaAccordionItem(validSchematicas[i], accordion.ItemHeight, 308));
+        }
 
         accordion.UpdateItems(accordionItems);
     }
-
-    // private void SchematicaHeaderClick(List<string> schematicaNames, int index, UIImage thumbnail) {
-    //     string name = schematicaNames[index];
-    //     if (Schematica.CurrentPreview?.Name == name || Schematica.PlacedSchematicas.Any(x => x.Name == name))
-    //         return;
-    //     
-    //     if (!importSchematica?.IsCompleted ?? false)
-    //         cancellationTokenSource.Cancel();
-    //
-    //     importSchematica = Task.Factory.StartNew(() => SchematicaFileFormat.ImportSchematica(name), cancellationTokenSource.Token)
-    //         .ContinueWith(
-    //             task => {
-    //                 cancellationTokenSource = new CancellationTokenSource();
-    //
-    //                 if (task.IsCanceled)
-    //                     return;
-    //
-    //                 Schematica.CurrentPreview = task.Result;
-    //                 Schematica.PlacedSchematicas.Add(task.Result);
-    //                 Schematica.GeneratePreviewQueue.Enqueue(() => {
-    //                         // Texture2D asd = Schematica.CurrentPreview.GeneratePreview();
-    //                         // thumbnail.SetImage(asd);
-    //                     }
-    //                 );
-    //
-    //                 //End loading animation
-    //             });
-    //
-    //     //Start loading animation
-    // }
 }

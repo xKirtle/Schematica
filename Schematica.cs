@@ -47,13 +47,12 @@ public class Schematica : Mod
 
     internal static ModKeybind UITestBind;
     internal static ModKeybind TestSetEdges;
-    internal static List<SchematicaData> PlacedSchematicas;
-    internal static SchematicaData CurrentPreview;
+    internal static List<SchematicaData> LoadedSchematicas = new List<SchematicaData>();
+    internal static int SelectedSchematicaIndex = -1;
 
     public override void Load() {
         UITestBind = KeybindLoader.RegisterKeybind(this, "Empty", "X");
         TestSetEdges = KeybindLoader.RegisterKeybind(this, "Edges", "R");
-        PlacedSchematicas = new List<SchematicaData>();
 
         bool[] selected = new bool[2];
         string[] textureNames = new[] { "FloppyDisk", "Schematica" };
@@ -99,15 +98,15 @@ public class Schematica : Mod
 
                                 Task.Factory.StartNew(
                                         () => {
-                                            string fileName = "BinarySchematica"; //TODO: SchematicaWindowState.Instance.ToggleSaveNamePopup();
+                                            string schematicaDisplayName = "Binary Schematica"; //TODO: SchematicaWindowState.Instance.ToggleSaveNamePopup();
 
                                             //Removing from Accordion since it'll be unavailable until it finished exporting
-                                            SchematicaWindowState.Instance.WindowElement.TryRemoveAccordionItem(fileName);
+                                            SchematicaWindowState.Instance.WindowElement.TryRemoveAccordionItem(schematicaDisplayName);
                                             CanRefreshSchematicasList = false;
                                             
-                                            TakeSchematicaSnapshot(fileName);
+                                            TakeSchematicaSnapshot(schematicaDisplayName);
                                             while (CaptureInterface.CameraLock) Task.Delay(50).Wait();
-                                            SchematicaFileFormat.ExportSchematica(fileName, CaptureInterface.EdgeA, CaptureInterface.EdgeB);
+                                            SchematicaFileFormat.ExportSchematica(schematicaDisplayName, CaptureInterface.EdgeA, CaptureInterface.EdgeB);
                                         }
                                     )
                                     .ContinueWith(
@@ -220,7 +219,7 @@ public class Schematica : Mod
         // };
     }
 
-    public static void TakeSchematicaSnapshot(string fileName) {
+    public static void TakeSchematicaSnapshot(string displayName) {
         Rectangle GetArea() {
             int x = Math.Min(CaptureInterface.EdgeA.X, CaptureInterface.EdgeB.X);
             int y = Math.Min(CaptureInterface.EdgeA.Y, CaptureInterface.EdgeB.Y);
@@ -228,7 +227,7 @@ public class Schematica : Mod
             int num2 = Math.Abs(CaptureInterface.EdgeA.Y - CaptureInterface.EdgeB.Y);
             return new Rectangle(x, y, num + 1, num2 + 1);
         }
-
+        
         var captureSettings = new CaptureSettings {
             Area = GetArea(),
             Biome = CaptureBiome.GetCaptureBiome(CaptureInterface.Settings.BiomeChoiceIndex),
@@ -236,7 +235,7 @@ public class Schematica : Mod
             CaptureEntities = false,
             UseScaling = CaptureInterface.Settings.PackImage,
             CaptureMech = false,
-            OutputName = fileName
+            OutputName = displayName
         };
                                             
         if (captureSettings.Biome.WaterStyle != 13)

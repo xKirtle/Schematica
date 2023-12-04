@@ -8,7 +8,9 @@ namespace Schematica.Common.DataStructures;
 
 public class SchematicaData
 {
-    public string Name { get; internal set; }
+    public string DisplayName { get; internal set; }
     public Point Size { get; internal set; }
     public List<TileData> TileDataList { get; internal set; }
+    public Texture2D ImagePreview { get; internal set; }
+    internal byte[] ImagePreviewData { get; set; }
 }
