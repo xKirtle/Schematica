@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -53,10 +54,14 @@ public class SearchSchematicaWindow : DraggableUIPanel
 {
     private UIAccordion accordion;
     private Task importSchematica;
+    
+    private UIPanel searchAreaPanel;
+    private UISearchBar searchBar;
+    private bool isExpanded;
 
     public override void OnInitialize() {
-        Width.Set(300f, 0f);
-        Height.Set(500f, 0f);
+        Width.Set(600f, 0f);
+        Height.Set(400f, 0f);
         Left.Set(24f, 0f);
         Top.Set(120f, 0f);
         SetPadding(6f);
@@ -67,6 +72,31 @@ public class SearchSchematicaWindow : DraggableUIPanel
         //     Vector2 clickPos = Vector2.Subtract(element.MousePosition, MenuPosition);
         //     canDrag = clickPos.Y <= 25;
         // };
+        
+        // Refresh button
+        var refreshButton = new UIImageButton(Main.Assets.Request<Texture2D>("Images/UI/SearchCancel")) {
+            MarginTop = 4f
+        };
+        
+        Append(refreshButton);
+        
+        // Expand menu arrow
+        var arrowAsset = Main.Assets.Request<Texture2D>("Images/UI/TexturePackButtons", AssetRequestMode.ImmediateLoad);
+        var expandArrow = new UIImageFramed(arrowAsset, arrowAsset.Frame(2, 2, 1, 1)) {
+            HAlign = 1f,
+            VAlign = 0f,
+            Width = new StyleDimension(32f, 0f),
+            Height = new StyleDimension(32f, 0f)
+        };
+
+        expandArrow.OnLeftClick += (evt, element) => {
+            isExpanded = !isExpanded;
+            
+            expandArrow.SetFrame(arrowAsset.Frame(2, 2, (!isExpanded).ToInt(), 1));
+            expandArrow.Left.Set(isExpanded ? 10f : 0f, 0f);
+        };
+        
+        Append(expandArrow);
 
         AddSearchBar(this);
 
@@ -74,21 +104,21 @@ public class SearchSchematicaWindow : DraggableUIPanel
         accordion = new UIAccordion(itemHeight: 40) {
             Width = StyleDimension.Fill,
             Height = new StyleDimension(-30f, 1f),
-            Top = new StyleDimension(30f, 0f)
+            Top = new StyleDimension(35f, 0f)
         };
 
         Append(accordion);
 
         RepopulateSchematicas();
     }
-
-    private UIPanel searchAreaPanel;
-    private UISearchBar searchBar;
+    
     private void AddSearchBar(UIElement parent) {
         //WIP
         searchAreaPanel = new UIPanel() {
-            Width = StyleDimension.Fill,
-            Height = new StyleDimension(25f, 0f),
+            MarginLeft = 26f,
+            MarginRight = 26f,
+            Width = new StyleDimension(-52f, 1f),
+            Height = new StyleDimension(32f, 0f),
             BackgroundColor = new Color(35, 40, 83),
             BorderColor = new Color(35, 40, 83)
         };
@@ -100,9 +130,8 @@ public class SearchSchematicaWindow : DraggableUIPanel
         };
 
         searchAreaPanel.Append(searchBar);
-
-        Asset<Texture2D> texture = Main.Assets.Request<Texture2D>("Images/UI/SearchCancel");
-        UIImageButton searchCancelCross = new(texture) {
+        
+        var searchCancelCross = new UIImageButton(Main.Assets.Request<Texture2D>("Images/UI/SearchCancel")) {
             HAlign = 1f,
             VAlign = 0.5f,
             Left = new StyleDimension(-2f, 0f)
@@ -122,6 +151,8 @@ public class SearchSchematicaWindow : DraggableUIPanel
             Main.LocalPlayer.mouseInterface = true;
         }
         
+        UpdateReactiveComponents();
+        
         accordion.RecalculateChildren();
     }
 
@@ -136,5 +167,18 @@ public class SearchSchematicaWindow : DraggableUIPanel
         }
 
         accordion.UpdateItems(accordionItems);
+    }
+
+    private void UpdateReactiveComponents() {
+        var targetWidth = isExpanded ? Math.Min(Main.screenWidth - 24f * 2f, 1200f) : 600f;
+        var targetHeight = isExpanded ? Height.Pixels + (Main.screenHeight - Height.Pixels) / 2f - 72f : 400f;
+        
+        Width.Set(MathHelper.Lerp(Width.Pixels, targetWidth, 0.25f), 0f);
+        Height.Set(MathHelper.Lerp(Height.Pixels, targetHeight, 0.25f), 0f);
+
+        // var searchAreaWidthPercentage = isExpanded ? 0.95f : 0.8f; 
+        // searchAreaPanel.Width.Set(0f, MathHelper.Lerp(searchAreaPanel.Width.Percent, searchAreaWidthPercentage, 0.2f));
+        
+        Recalculate();
     }
 }

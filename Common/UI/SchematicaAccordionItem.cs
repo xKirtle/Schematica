@@ -58,6 +58,7 @@ public class SchematicaAccordionItem : UIAccordionItem
         // panel.Append(thumbnail);
         
         previewImage = new UIImage(Asset<Texture2D>.Empty) {
+            HAlign = 0.5f,
             Width = StyleDimension.Fill,
             Height = new StyleDimension(200f, 1f),
             Top = new StyleDimension(35f, 0)

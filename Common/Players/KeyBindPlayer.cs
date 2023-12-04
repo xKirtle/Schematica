@@ -10,7 +10,12 @@ namespace Schematica.Common.Players;
 public class KeyBindPlayer : ModPlayer
 {
     public override void ProcessTriggers(TriggersSet triggersSet) {
-        if (Schematica.UITestBind.JustPressed) { SchematicaWindowState.Instance.WindowElement.RepopulateSchematicas(); }
+        if (Schematica.UITestBind.JustPressed) {
+            // SchematicaWindowState.Instance.WindowElement.RepopulateSchematicas();
+            SchematicaUISystem.Instance.Deactivate();
+            SchematicaUISystem.Instance.Load();
+            SchematicaUISystem.Instance.Activate();
+        }
 
         if (Schematica.TestSetEdges.JustPressed) {
             CaptureInterface.EdgeA = Point.Zero;

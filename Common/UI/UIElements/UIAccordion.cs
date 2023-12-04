@@ -34,9 +34,11 @@ public class UIAccordion : UIElement
 
         scrollbar = new UIScrollbar() {
             Width = new StyleDimension(20f, 0f),
-            Height = new StyleDimension(-10f, 1f),
+            Height = new StyleDimension(-16f, 1f),
             Left = new StyleDimension(-20f, 1f),
-            Top = new StyleDimension(5f, 0f)
+            // Top = new StyleDimension(5f, 0f),
+            MarginTop = 5f,
+            MarginBottom = 5f
         };
 
         Items.SetScrollbar(scrollbar);
