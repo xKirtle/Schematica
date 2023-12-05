@@ -49,6 +49,7 @@ public class SchematicaAccordionItem : UIAccordionItem
     private void ImportButtonOnClick(UIMouseEvent evt, UIElement button) {
         Console.WriteLine("Import and Place logic happens here");
         Task.Factory.StartNew(() => {
+                // TODO: Need to make this a popup with a progress bar and a cancel button to prevent other schematicas from being imported
                 return SchematicaFileFormat.ImportSchematica(Title);
             }, cancellationTokenSource.Token)
             .ContinueWith(task => {
