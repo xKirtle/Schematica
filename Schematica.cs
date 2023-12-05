@@ -232,7 +232,7 @@ public class Schematica : Mod
             Area = GetArea(),
             Biome = CaptureBiome.GetCaptureBiome(CaptureInterface.Settings.BiomeChoiceIndex),
             CaptureBackground = !CaptureInterface.Settings.TransparentBackground,
-            CaptureEntities = false,
+            CaptureEntities = true,
             UseScaling = CaptureInterface.Settings.PackImage,
             CaptureMech = false,
             OutputName = displayName

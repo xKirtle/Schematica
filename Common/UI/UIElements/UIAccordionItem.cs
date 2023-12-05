@@ -22,22 +22,21 @@ public abstract class UIAccordionItem : UIElement
     protected UIElement Header { get; private set; }
     protected UIElement Body { get; private set; }
 
-    private UIElement innerBody;
     private UIImageFramed arrow;
     private ScrollingUIText title;
     private Asset<Texture2D> arrowAsset;
     private float targetHeight;
 
-    public UIAccordionItem(string title, int headerHeight, int bodyHeight) {
+    public UIAccordionItem(string title, int headerHeight) {
         Title = title;
 
         GenerateHeader(headerHeight);
-        GenerateBody(bodyHeight);
+        GenerateBody();
 
         Width.Set(0f, 1f);
-        Height.Set(Header.Height.Pixels + (IsOpen ? innerBody.Height.Pixels : 0), 0f);
-
-        Append(innerBody);
+        Height.Set(Header.Height.Pixels + (IsOpen ? Body.Height.Pixels : 0), 0f);
+        
+        Append(Body);
         Append(Header);
 
         OverflowHidden = true;
@@ -53,20 +52,21 @@ public abstract class UIAccordionItem : UIElement
             Height = new StyleDimension(headerHeight, 0f)
         };
 
-        UIPanel panel = new() {
+        var panel = new UIPanel() {
             Width = StyleDimension.Fill,
             Height = StyleDimension.Fill,
             BackgroundColor = new Color(35, 40, 83),
             BorderColor = new Color(35, 40, 83)
         };
+        
         panel.SetPadding(0);
 
-        UIElement uiTextDrawBounds = new() {
+        var uiTextDrawBounds = new UIElement() {
             Width = new StyleDimension(-5f * 2 - 32f - 0f, 1f),
             Height = StyleDimension.Fill,
             OverflowHidden = true
         };
-
+        
         panel.Append(uiTextDrawBounds);
 
         title = new ScrollingUIText(Title) {
@@ -102,27 +102,21 @@ public abstract class UIAccordionItem : UIElement
         Header.Append(panel);
     }
 
-    private void GenerateBody(int bodyHeight) {
-        innerBody = new UIElement() {
-            Width = StyleDimension.Fill,
-            Height = new StyleDimension(Header.Height.Pixels + bodyHeight, 0f)
-        };
-
+    private void GenerateBody() {
         Body = new UIPanel() {
             Width = StyleDimension.Fill,
             Height = StyleDimension.Fill,
+            // Height = new StyleDimension(240f, 0f),
             PaddingTop = Header.Height.Pixels + 10f,
             BorderColor = new Color(35, 40, 83),
             OverflowHidden = true
         };
-
-        innerBody.Append(Body);
     }
 
     public virtual void ToggleOpen() {
         IsOpen = !IsOpen;
-
-        targetHeight = Header.Height.Pixels + (IsOpen ? innerBody.Height.Pixels - Header.Height.Pixels : 0) + 1f;
+        targetHeight = Header.Height.Pixels + (IsOpen ? Body.Height.Pixels : 0);
+        Console.WriteLine($"isOpen: {IsOpen} | targetHeight: {targetHeight}");
         arrow.SetImage(arrowAsset, arrowAsset.Frame(2, 2, (!IsOpen).ToInt(), 0));
         RecalculateChildren();
     }

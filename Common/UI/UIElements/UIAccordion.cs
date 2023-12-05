@@ -16,7 +16,7 @@ namespace Schematica.Common.UI.UIElements;
 public class UIAccordion : UIElement
 {
     public List<UIAccordionItem> accordionItems;
-    public SmoothUIGrid Items;
+    public SmoothUIGrid items;
     public UIScrollbar scrollbar;
 
     public UIAccordionItem SelectedItem { get; private set; }
@@ -26,7 +26,7 @@ public class UIAccordion : UIElement
         ItemHeight = itemHeight;
         accordionItems = new List<UIAccordionItem>();
 
-        Items = new SmoothUIGrid() {
+        items = new SmoothUIGrid() {
             Width = new StyleDimension(-20f - 3f, 1f),
             Height = StyleDimension.Fill,
             ListPadding = 5f
@@ -41,9 +41,9 @@ public class UIAccordion : UIElement
             MarginBottom = 5f
         };
 
-        Items.SetScrollbar(scrollbar);
-
-        Append(Items);
+        items.SetScrollbar(scrollbar);
+        
+        Append(items);
         Append(scrollbar);
     }
 
@@ -51,12 +51,12 @@ public class UIAccordion : UIElement
         Clear();
 
         accordionItems.AddRange(list);
-        Items.AddRange(list);
-        Items.UpdateOrder();
+        items.AddRange(list);
+        items.UpdateOrder();
 
         //Bind events
         foreach (UIAccordionItem accordianItem in accordionItems) {
-            accordianItem.HeaderOnClick += (__, _) => {
+            accordianItem.HeaderOnClick += (_, _) => {
                 if (SelectedItem != accordianItem)
                     SelectedItem?.ToggleOpen();
 
@@ -76,6 +76,6 @@ public class UIAccordion : UIElement
 
     public void Clear() {
         accordionItems.Clear();
-        Items.Clear();
+        items.Clear();
     }
 }

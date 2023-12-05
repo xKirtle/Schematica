@@ -25,52 +25,23 @@ public class SchematicaAccordionItem : UIAccordionItem
     private UIText height;
     private CancellationTokenSource cancellationTokenSource;
 
-    public SchematicaAccordionItem(SchematicaData schematicaData, int headerHeight, int bodyHeight) : base(schematicaData.DisplayName, headerHeight, bodyHeight) {
+    public SchematicaAccordionItem(SchematicaData schematicaData, int headerHeight) : base(schematicaData.DisplayName, headerHeight) {
         cancellationTokenSource = new CancellationTokenSource();
         
-        panel = new UIPanel() {
-            Width = StyleDimension.Fill,
-            Height = new StyleDimension(240f, 0f), //Can't make square by getting width's pixel value?
-            BackgroundColor = new Color(35, 40, 83),
-            OverflowHidden = true
-        };
-
-        Body.Append(panel);
-
-        width = new UIText("Width: ??") {
-            HAlign = 0f
-        };
-        
-        panel.Append(width);
-        
-        height = new UIText("Height: ??") {
-            HAlign = 1f
-        };
-        
-        panel.Append(height);
-
-        // thumbnail = new UISchematicaThumbnail() {
-        //     Width = StyleDimension.Fill,
-        //     Height = new StyleDimension(-35f, 1f),
-        //     Top = new StyleDimension(35f, 0)
-        // };
-
-        // panel.Append(thumbnail);
-        
         previewImage = new UIImage(Asset<Texture2D>.Empty) {
+            // Width = StyleDimension.Fill,
+            // Height = StyleDimension.Fill,
+            // MaxHeight = new StyleDimension(200f, 0f),
+            ScaleToFit = true,
+            AllowResizingDimensions = false,
             HAlign = 0.5f,
-            Width = StyleDimension.Fill,
-            Height = new StyleDimension(200f, 1f),
-            Top = new StyleDimension(35f, 0)
         };
         
-        panel.Append(previewImage);
+        Body.Append(previewImage);
 
-        UIButton importButton = new("Import & Place Schematica") {
+        var importButton = new UIButton("Import & Place Schematica") {
             Width = StyleDimension.Fill,
             Height = new StyleDimension(35f, 0f),
-            Top = new StyleDimension(-2f, 0f),
-            HAlign = 1f,
             VAlign = 1f
         };
 
@@ -87,24 +58,27 @@ public class SchematicaAccordionItem : UIAccordionItem
 
     public void SetSchematica(SchematicaData schematica) {
         Schematica = schematica;
-        
-        width.SetText($"Width: {Schematica.Size.X}");
-        height.SetText($"Height: {Schematica.Size.Y}");
-        // SetThumbnailScale();
     }
 
     public override void Update(GameTime gameTime) {
         base.Update(gameTime);
 
-        if (Schematica != null && Schematica.ImagePreview == null &&Schematica.ImagePreviewData != null) {
+        if (Schematica != null && Schematica.ImagePreview == null && Schematica.ImagePreviewData != null) {
             using var memoryStream = new MemoryStream(Schematica.ImagePreviewData);
             var texture = Texture2D.FromStream(Main.instance.GraphicsDevice, memoryStream);
-
+        
             if (texture != null) {
                 Schematica.ImagePreview = texture;
                 Schematica.ImagePreviewData = null; // Free up resources
                 previewImage.SetImage(Schematica.ImagePreview);
-                Console.WriteLine("ImagePreview set");
+
+                var aspectRatio = (float) Schematica.ImagePreview.Width / Schematica.ImagePreview.Height;
+                var width = Math.Min(Body.GetDimensions().Width, Schematica.ImagePreview.Width);
+                previewImage.Width.Set(width, 0f);
+                var targetHeight = width / aspectRatio;
+                previewImage.Height.Set(targetHeight, 0f);
+                
+                Body.Height.Pixels += targetHeight + 66f;
             }
         }
     }
@@ -118,7 +92,7 @@ public class SchematicaAccordionItem : UIAccordionItem
 
         float scale = 1;
         Vector2 offset = new Vector2();
-        
+
         if (actualWidth > desiredWidth || actualHeight > desiredHeight) {
             if (actualHeight > actualWidth) {
                 scale = (float) desiredWidth / actualHeight;

@@ -55,14 +55,14 @@ public class SearchSchematicaWindow : DraggableUIPanel
 {
     private UIAccordion accordion;
     private Task importSchematica;
-    
+
     private UIPanel searchAreaPanel;
     private UISearchBar searchBar;
     private bool isExpanded;
 
     public override void OnInitialize() {
-        Width.Set(600f, 0f);
-        Height.Set(400f, 0f);
+        Width.Set(500f, 0f);
+        Height.Set(700f, 0f);
         MarginLeft = 24f;
         MarginTop = 120f;
         // Left.Set(24f, 0f);
@@ -75,7 +75,7 @@ public class SearchSchematicaWindow : DraggableUIPanel
         //     Vector2 clickPos = Vector2.Subtract(element.MousePosition, MenuPosition);
         //     canDrag = clickPos.Y <= 25;
         // };
-        
+
         // Refresh button
         var refreshButton = new UIColoredImageButton(ModContent.Request<Texture2D>("Schematica/Assets/UI/Refresh", AssetRequestMode.ImmediateLoad), true) {
             MarginLeft = 4f,
@@ -87,9 +87,9 @@ public class SearchSchematicaWindow : DraggableUIPanel
         refreshButton.OnLeftClick += (evt, element) => {
             RepopulateSchematicas();
         };
-        
+
         Append(refreshButton);
-        
+
         // Expand menu arrow
         var arrowAsset = Main.Assets.Request<Texture2D>("Images/UI/TexturePackButtons", AssetRequestMode.ImmediateLoad);
         var expandArrow = new UIImageFramed(arrowAsset, arrowAsset.Frame(2, 2, 1, 1)) {
@@ -101,11 +101,11 @@ public class SearchSchematicaWindow : DraggableUIPanel
 
         expandArrow.OnLeftClick += (evt, element) => {
             isExpanded = !isExpanded;
-            
+
             expandArrow.SetFrame(arrowAsset.Frame(2, 2, (!isExpanded).ToInt(), 1));
             expandArrow.Left.Set(isExpanded ? 10f : 0f, 0f);
         };
-        
+
         Append(expandArrow);
 
         AddSearchBar(this);
@@ -113,7 +113,7 @@ public class SearchSchematicaWindow : DraggableUIPanel
         //Accordion
         accordion = new UIAccordion(itemHeight: 40) {
             Width = StyleDimension.Fill,
-            Height = new StyleDimension(-30f, 1f),
+            Height = new StyleDimension(-35f, 1f),
             Top = new StyleDimension(35f, 0f)
         };
 
@@ -121,7 +121,7 @@ public class SearchSchematicaWindow : DraggableUIPanel
 
         RepopulateSchematicas();
     }
-    
+
     private void AddSearchBar(UIElement parent) {
         //WIP
         searchAreaPanel = new UIPanel() {
@@ -131,6 +131,7 @@ public class SearchSchematicaWindow : DraggableUIPanel
             BackgroundColor = new Color(35, 40, 83),
             BorderColor = new Color(35, 40, 83)
         };
+
         searchAreaPanel.SetPadding(0f);
 
         searchBar = new UISearchBar(LocalizedText.Empty, 1f) {
@@ -139,7 +140,7 @@ public class SearchSchematicaWindow : DraggableUIPanel
         };
 
         searchAreaPanel.Append(searchBar);
-        
+
         var searchCancelCross = new UIImageButton(Main.Assets.Request<Texture2D>("Images/UI/SearchCancel")) {
             HAlign = 1f,
             VAlign = 0.5f,
@@ -159,9 +160,9 @@ public class SearchSchematicaWindow : DraggableUIPanel
             Schematica.CanSelectEdges = false;
             Main.LocalPlayer.mouseInterface = true;
         }
-        
+
         UpdateReactiveComponents();
-        
+
         accordion.RecalculateChildren();
     }
 
@@ -170,21 +171,20 @@ public class SearchSchematicaWindow : DraggableUIPanel
     public void RepopulateSchematicas() {
         var validSchematicas = SchematicaFileFormat.GetValidAndUnloadedSchematicasMetadata();
         var accordionItems = new List<UIAccordionItem>(validSchematicas.Count);
-        
-        for (int i = 0; i < validSchematicas.Count; i++) {
-            accordionItems.Add(new SchematicaAccordionItem(validSchematicas[i], accordion.ItemHeight, 308));
-        }
+
+        for (int i = 0; i < validSchematicas.Count; i++) { accordionItems.Add(new SchematicaAccordionItem(validSchematicas[i], accordion.ItemHeight)); }
 
         accordion.UpdateItems(accordionItems);
     }
 
     private void UpdateReactiveComponents() {
-        var targetWidth = isExpanded ? Math.Min(Main.screenWidth - 24f * 2f, 1200f) : 600f;
-        var targetHeight = isExpanded ? Height.Pixels + (Main.screenHeight - Height.Pixels) / 2f - 72f : 400f;
-        
+        var targetWidth = isExpanded ? Math.Min(Main.screenWidth - 24f * 2f, 800f) : 500f;
+        // var targetHeight = isExpanded ? Height.Pixels + (Main.screenHeight - Height.Pixels) / 2f - 72f : 450f;
+        var targetHeight = Height.Pixels + (Main.screenHeight - Height.Pixels) / 2f - 72f;
+
         Width.Set(MathHelper.Lerp(Width.Pixels, targetWidth, 0.25f), 0f);
         Height.Set(MathHelper.Lerp(Height.Pixels, targetHeight, 0.25f), 0f);
-        
+
         Recalculate();
     }
 }
