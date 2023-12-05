@@ -62,7 +62,7 @@ public class SearchSchematicaWindow : DraggableUIPanel
 
     public override void OnInitialize() {
         Width.Set(500f, 0f);
-        Height.Set(700f, 0f);
+        Height.Set(500f, 0f);
         MarginLeft = 24f;
         MarginTop = 120f;
         // Left.Set(24f, 0f);

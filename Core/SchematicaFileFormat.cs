@@ -142,6 +142,7 @@ public static class SchematicaFileFormat
 
         try {
             string readPath = Path.Combine(Schematica.SavePath, $"{ConvertToFileName(displayName)}.schematica");
+
             using var fileStream = new FileStream(readPath, FileMode.Open);
             using var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Read);
 
@@ -149,12 +150,16 @@ public static class SchematicaFileFormat
             ValidateSchematicaIntegrity(zipArchive);
             ValidateSchematicaDependencies(zipArchive);
             ValidateAndParseSchematicaPreview(zipArchive, schematica);
-            
+
             if (!onlyMetadata) {
                 ValidateAndParseSchematicaData(zipArchive, schematica);
             }
-            
+
             Console.WriteLine($"Finished importing {displayName} in {sw.ElapsedMilliseconds}ms");
+        }
+        catch (IOException e) {
+            Console.WriteLine($"Cannot import schematica named {displayName} because the file is being used by another process");
+            return null;
         }
         catch (Exception e) {
             Console.WriteLine(e);

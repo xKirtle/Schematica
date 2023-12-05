@@ -116,7 +116,6 @@ public abstract class UIAccordionItem : UIElement
     public virtual void ToggleOpen() {
         IsOpen = !IsOpen;
         targetHeight = Header.Height.Pixels + (IsOpen ? Body.Height.Pixels : 0);
-        Console.WriteLine($"isOpen: {IsOpen} | targetHeight: {targetHeight}");
         arrow.SetImage(arrowAsset, arrowAsset.Frame(2, 2, (!IsOpen).ToInt(), 0));
         RecalculateChildren();
     }

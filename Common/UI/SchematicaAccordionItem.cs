@@ -17,12 +17,8 @@ namespace Schematica.Common.UI.UIElements;
 public class SchematicaAccordionItem : UIAccordionItem
 {
     public SchematicaData Schematica { get; private set; }
-
-    private UIPanel panel;
-    private UISchematicaThumbnail thumbnail;
+    
     private UIImage previewImage;
-    private UIText width;
-    private UIText height;
     private CancellationTokenSource cancellationTokenSource;
 
     public SchematicaAccordionItem(SchematicaData schematicaData, int headerHeight) : base(schematicaData.DisplayName, headerHeight) {
@@ -52,8 +48,14 @@ public class SchematicaAccordionItem : UIAccordionItem
     }
     private void ImportButtonOnClick(UIMouseEvent evt, UIElement button) {
         Console.WriteLine("Import and Place logic happens here");
-        Task.Factory.StartNew(() => SchematicaFileFormat.ImportSchematica(Title), cancellationTokenSource.Token)
-            .ContinueWith(task => SetSchematica(task.Result));
+        Task.Factory.StartNew(() => {
+                return SchematicaFileFormat.ImportSchematica(Title);
+            }, cancellationTokenSource.Token)
+            .ContinueWith(task => {
+                    Console.WriteLine("Imported Schematica successfully");
+                    SetSchematica(task.Result);
+                }
+            );
     }
 
     public void SetSchematica(SchematicaData schematica) {
@@ -81,39 +83,5 @@ public class SchematicaAccordionItem : UIAccordionItem
                 Body.Height.Pixels += targetHeight + 66f;
             }
         }
-    }
-
-    private void SetThumbnailScale() {
-        int desiredWidth = 100 * 16;
-        int desiredHeight = 100 * 16;
-
-        int actualWidth = Schematica.Size.X * 16;
-        int actualHeight = Schematica.Size.Y * 16;
-
-        float scale = 1;
-        Vector2 offset = new Vector2();
-
-        if (actualWidth > desiredWidth || actualHeight > desiredHeight) {
-            if (actualHeight > actualWidth) {
-                scale = (float) desiredWidth / actualHeight;
-                offset.X = (desiredWidth - actualWidth * scale) / 2;
-            }
-            else {
-                scale = (float) desiredWidth / actualWidth;
-                offset.Y = (desiredHeight - actualHeight * scale) / 2;
-            }
-        }
-
-        // offset = Vector2.Zero;
-        // offset /= scale;
-        //76 by 34
-        // offset = offset / scale + new Vector2(325, 1200);
-        //
-        // offset = new Vector2(1764, 8341);
-
-        Console.WriteLine($"desired height: {desiredHeight}");
-        Console.WriteLine($"offset: {offset}");
-        Console.WriteLine($"scale: {scale}");
-        thumbnail.SetSchematica(Schematica, offset, scale);
     }
 }
